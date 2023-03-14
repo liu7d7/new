@@ -3,12 +3,12 @@ using System.Runtime.InteropServices;
 
 namespace New.Shared
 {
-  public class List<T> : IList<T>
+  public class Vec<T> : IList<T>
   {
     private const int _defaultCapacity = 4;
     private static readonly T[] _emptyArray = Array.Empty<T>();
 
-    public List(IEnumerable<T> collection)
+    public Vec(IEnumerable<T> collection)
     {
       if (collection is ICollection<T> is2)
       {
@@ -27,7 +27,7 @@ namespace New.Shared
       }
     }
 
-    public List(int capacity = _defaultCapacity)
+    public Vec(int capacity = _defaultCapacity)
     {
       Items = new T[capacity];
     }
@@ -59,6 +59,12 @@ namespace New.Shared
       if (Count == Items.Length)
         EnsureCapacity(Count + 1);
       Items[Count++] = item;
+    }
+
+    public void Sort(Func<T, T, int> comparer)
+    {
+      Comparer<T> comparer1 = Comparer<T>.Create(new Comparison<T>(comparer));
+      Array.Sort(Items, comparer1);
     }
 
     public void Clear()
@@ -143,7 +149,7 @@ namespace New.Shared
 
     bool ICollection<T>.IsReadOnly => false;
 
-    public static implicit operator T[](List<T> collection)
+    public static implicit operator T[](Vec<T> collection)
     {
       return collection.Items;
     }
@@ -220,12 +226,12 @@ namespace New.Shared
       return new Enumerator(this);
     }
 
-    public List<T> GetRange(int index, int count)
+    public Vec<T> GetRange(int index, int count)
     {
-      List<T> list = new(count);
-      Array.Copy(Items, index, list.Items, 0, count);
-      list.Count = count;
-      return list;
+      Vec<T> vec = new(count);
+      Array.Copy(Items, index, vec.Items, 0, count);
+      vec.Count = count;
+      return vec;
     }
 
     public int IndexOf(T item, int index)
@@ -270,12 +276,12 @@ namespace New.Shared
     [StructLayout(LayoutKind.Sequential)]
     public struct Enumerator : IEnumerator<T>
     {
-      private readonly List<T> list;
+      private readonly Vec<T> _vec;
       private int index;
 
-      internal Enumerator(List<T> list)
+      internal Enumerator(Vec<T> vec)
       {
-        this.list = list;
+        this._vec = vec;
         index = 0;
         Current = default;
       }
@@ -286,16 +292,16 @@ namespace New.Shared
 
       public bool MoveNext()
       {
-        List<T> fastList = list;
-        if (index >= fastList.Count) return MoveNextRare();
-        Current = fastList.Items[index];
+        Vec<T> fastVec = _vec;
+        if (index >= fastVec.Count) return MoveNextRare();
+        Current = fastVec.Items[index];
         index++;
         return true;
       }
 
       private bool MoveNextRare()
       {
-        index = list.Count + 1;
+        index = _vec.Count + 1;
         Current = default;
         return false;
       }

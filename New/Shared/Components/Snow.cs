@@ -30,7 +30,7 @@ namespace New.Shared.Components
       }
     }
 
-    public Snow() : base(Entity.CompType.Snow)
+    public Snow() : base(CompType.Snow)
     {
       _modelIndexCount++;
       _modelIndex = _modelIndexCount % MODEL_COUNT;

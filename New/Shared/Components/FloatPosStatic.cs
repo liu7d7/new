@@ -8,13 +8,13 @@ namespace New.Shared.Components
     public float Y;
     public float Z;
 
-    public FloatPosStatic() : base(Entity.CompType.FloatPosStatic)
+    public FloatPosStatic() : base(CompType.FloatPosStatic)
     {
     }
 
     public static FloatPosStatic Get(Entity obj)
     {
-      return obj.Get<FloatPosStatic>(Entity.CompType.FloatPosStatic);
+      return obj.Get<FloatPosStatic>(CompType.FloatPosStatic);
     }
 
     public Vector3 ToVec3()

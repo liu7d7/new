@@ -8,12 +8,12 @@ namespace New.Engine
     private readonly int _handle;
     private readonly bool _static;
     private int _count;
-    private uint[] _indices;
+    private int[] _indices;
 
     public Ibo(int initialCapacity, bool @static)
     {
       _handle = GL.GenBuffer();
-      _indices = ArrayPool<uint>.Shared.Rent(initialCapacity);
+      _indices = ArrayPool<int>.Shared.Rent(initialCapacity);
       _static = @static;
     }
 
@@ -27,13 +27,13 @@ namespace New.Engine
       GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
     }
 
-    public void Put(uint element)
+    public void Put(int element)
     {
       if (_count + 1 > _indices.Length)
       {
-        ArrayPool<uint>.Shared.Return(_indices);
-        uint[] prev = _indices;
-        _indices = ArrayPool<uint>.Shared.Rent(_indices.Length * 2);
+        ArrayPool<int>.Shared.Return(_indices);
+        int[] prev = _indices;
+        _indices = ArrayPool<int>.Shared.Rent(_indices.Length * 2);
         Array.Copy(prev, _indices, _count);
       }
 
@@ -53,15 +53,6 @@ namespace New.Engine
     public void Clear()
     {
       _count = 0;
-      if (_static)
-        Dispose();
-      else
-        Array.Clear(_indices, 0, _count);
-    }
-
-    private void Dispose()
-    {
-      _indices = null;
     }
   }
 }

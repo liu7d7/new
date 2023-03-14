@@ -14,7 +14,7 @@ namespace New.Shared.Components
       _model.Scale(0.5f);
     }
 
-    public Projectile(Vector3 dir, float speed) : base(Entity.CompType.Projectile)
+    public Projectile(Vector3 dir, float speed) : base(CompType.Projectile)
     {
       _dir = dir;
       _speed = speed;

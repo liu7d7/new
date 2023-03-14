@@ -5,7 +5,7 @@ namespace New.Shared.Components
     public int Id;
     public string Name;
 
-    public Tag(int id, string name = "") : base(Entity.CompType.Tag)
+    public Tag(int id, string name = "") : base(CompType.Tag)
     {
       Id = id;
       Name = name;

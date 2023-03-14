@@ -23,6 +23,18 @@ namespace New.Shared
       Max = max;
     }
 
+    public Box Deflate(float percentage)
+    {
+      Vector3 max = Max;
+      Vector3 min = Min;
+      Vector3 size = max - min;
+      float thing = MathF.Min(size.X, MathF.Min(size.Y, size.Z));
+      Vector3 offset = (thing * percentage, thing * percentage, thing * percentage);
+      min += offset;
+      max -= offset;
+      return new Box(min, max);
+    }
+
     public bool RayCollides(Vector3 offset, Vector3 ro, Vector3 rd, out float dist)
     {
       Vector3 dirfrac = (1.0f / rd.X, 1.0f / rd.Y, 1.0f / rd.Z);

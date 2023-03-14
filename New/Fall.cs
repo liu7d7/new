@@ -94,7 +94,7 @@ namespace New
           obj.Add(comp);
           obj.Add(pos);
           obj.Add(new Tree());
-          obj.Add(new Collision(comp.Model.Collisions));
+          obj.Add(new MeshCollision<PC>(comp.Model.Mesh));
           World.Objs.Add(obj);
         }
       }
@@ -133,7 +133,7 @@ namespace New
             };
             pos.Y = World.HeightAt((pos.X, pos.Z)) - 2f;
             obj.Add(pos);
-            obj.Add(new Collision(comp.Model.Collisions));
+            obj.Add(new MeshCollision<PC>(comp.Model.Mesh));
             World.Objs.Add(obj);
           }
         }
@@ -224,9 +224,79 @@ namespace New
       Fbo.Unbind();
 
       RenderSystem.FRAME0.Blit();
+      
+      Vector3 eye = Player.Get<FloatPos>(CompType.FloatPos).ToLerpedVec3() + (0, 5, 0);
+      Vector3 dir = Player.Get<Camera>(CompType.Camera).Front;
+      HitResult res = World.Raycast(eye, dir, out float dist);
+      Chunk c = res.Chunk;
+      Entity e = res.Entity;
+      (int, Vector3) p = c != null ? c.Mesh.ClosestVertex(res.Hit) : e?.GetMesh() != null ? e.GetMesh().ClosestVertex(res.Hit - e.Pos) : (0, Vector3.Zero);
+      if (e?.GetMesh() != null)
+      {
+        p.Item2 += e.Pos;
+      }
+      
+      Vector3 sc = RenderSystem.Project(p.Item2);
 
       RenderSystem.UpdateLookAt(Player, false);
       RenderSystem.UpdateProjection();
+      
+      if (FirstPerson)
+      {
+        RenderSystem.QUADS.Begin();
+        RenderSystem.QUADS.Quad(
+          RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-5, -5, 0), PINK0)).Next(),
+          RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(5, -5, 0), PINK0)).Next(),
+          RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(5, 5, 0), PINK0)).Next(),
+          RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-5, 5, 0), PINK0)).Next()
+        );
+        if (res.Type != HitResultType.None)
+        {
+          RenderSystem.QUADS.Quad(
+            RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-3, -3, 0), 0xffffffff)).Next(),
+            RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(3, -3, 0), 0xffffffff)).Next(),
+            RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(3, 3, 0), 0xffffffff)).Next(),
+            RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-3, 3, 0), 0xffffffff)).Next()
+          );
+        }
+
+        switch (res.Type)
+        {
+          case HitResultType.Entity:
+            RenderSystem.QUADS.Quad(
+              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, -3, 0), Color4.Cyan.ToVector4())).Next(),
+              RenderSystem.QUADS.Put(new(sc + new Vector3(3, -3, 0), Color4.Cyan.ToVector4())).Next(),
+              RenderSystem.QUADS.Put(new(sc + new Vector3(3, 3, 0), Color4.Cyan.ToVector4())).Next(),
+              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, 3, 0), Color4.Cyan.ToVector4())).Next()
+            );
+            if (KeyboardState.IsKeyDown(Keys.Space))
+            {
+              (int, Vector3) lookup = e.GetMesh().ClosestVertex(res.Hit);
+              e.GetMesh().SetPos(lookup.Item1, lookup.Item2 + (0, 1, 0));
+              (int, Vector3) lookup1 = e.GetMesh().ClosestVertex(res.Hit);
+              Console.WriteLine(lookup);
+              Console.WriteLine(lookup1);
+              e.GetMesh().End();
+            }
+            break;
+          case HitResultType.Tile:
+            RenderSystem.QUADS.Quad(
+              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, -3, 0), Color4.Cyan.ToVector4())).Next(),
+              RenderSystem.QUADS.Put(new(sc + new Vector3(3, -3, 0), Color4.Cyan.ToVector4())).Next(),
+              RenderSystem.QUADS.Put(new(sc + new Vector3(3, 3, 0), Color4.Cyan.ToVector4())).Next(),
+              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, 3, 0), Color4.Cyan.ToVector4())).Next()
+            );
+            if (KeyboardState.IsKeyDown(Keys.Space))
+            {
+              (int, Vector3) lookup = c.Mesh.ClosestVertex(res.Hit);
+              c.Mesh.SetPos(lookup.Item1, lookup.Item2 + (0, 1, 0));
+              c.Mesh.End();
+            }
+            break;
+        }
+        RenderSystem.QUADS.Render();
+      }
+      
       Font.Bind();
       RenderSystem.RenderingRed = true;
       RenderSystem.MESH.Begin();
@@ -241,10 +311,6 @@ namespace New
         _memUsage = (int)(GC.GetTotalMemory(false) / (1024 * 1024));
       }
 
-      Vector3 eye = Player.Get<FloatPos>(Entity.CompType.FloatPos).ToLerpedVec3() + (0, 5, 0);
-      Vector3 dir = Player.Get<Camera>(Entity.CompType.Camera).Front;
-      HitResult res = World.Raycast(eye, dir, out float dist);
-
       Font.Draw(RenderSystem.MESH, $"mspf: {_mspf.Average:N4} | fps: {1f / _mspf.Average:N2}", 11, 38, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"time: {Environment.TickCount / 1000f % (MathF.PI * 2f):N2}", 11, 58, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"xyz: {Player.Pos.X:N2}; {Player.Pos.Y:N2}; {Player.Pos.Z:N2}", 11, 78, PINK0, false);
@@ -254,29 +320,6 @@ namespace New
 
       RenderSystem.MESH.Render();
       RenderSystem.RenderingRed = false;
-
-      Vector3 screenPos = RenderSystem.Project(res.Hit);
-      if (FirstPerson)
-      {
-        RenderSystem.QUADS.Begin();
-        RenderSystem.QUADS.Quad(
-          RenderSystem.QUADS.Put(new(screenPos + new Vector3(-5, -5, 0), PINK0)).Next(),
-          RenderSystem.QUADS.Put(new(screenPos + new Vector3(5, -5, 0), PINK0)).Next(),
-          RenderSystem.QUADS.Put(new(screenPos + new Vector3(5, 5, 0), PINK0)).Next(),
-          RenderSystem.QUADS.Put(new(screenPos + new Vector3(-5, 5, 0), PINK0)).Next()
-        );
-        if (res.Type != HitResultType.None)
-        {
-          RenderSystem.QUADS.Quad(
-            RenderSystem.QUADS.Put(new(screenPos + new Vector3(-3, -3, 0), 0xffffffff)).Next(),
-            RenderSystem.QUADS.Put(new(screenPos + new Vector3(3, -3, 0), 0xffffffff)).Next(),
-            RenderSystem.QUADS.Put(new(screenPos + new Vector3(3, 3, 0), 0xffffffff)).Next(),
-            RenderSystem.QUADS.Put(new(screenPos + new Vector3(-3, 3, 0), 0xffffffff)).Next()
-          );
-        }
-
-        RenderSystem.QUADS.Render();
-      }
 
       Font.Unbind();
 

@@ -1,30 +1,31 @@
+using New.Shared;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 
 namespace New.Engine
 {
-  public class Mesh<T> where T : struct, IPos3d
+  public class Mesh<T> : IPosProvider where T : struct, IPos3d
   {
     private readonly DrawMode _drawMode;
     private readonly Ibo _ibo;
     private readonly Shader _shader;
     private readonly bool _static;
     private readonly Vao _vao;
-    private readonly Vbo<T> _vbo;
+    public readonly Vbo<T> Vbo;
     private bool _building;
     private int _index;
     private int _tris;
-    private uint _vertex;
-
-    private const float _oneOver255 = 1.0f / 255.0f;
+    public int Vertex;
+    public bool Dirty;
+    public Vec<(int, int, int)> Tris = new();
 
     public Mesh(DrawMode drawMode, Shader shader, bool @static)
     {
       _drawMode = drawMode;
       _shader = shader;
       int stride = VertexTypes.Layouts[typeof(T)].Sum(attrib => (int)attrib * sizeof(float));
-      _vbo = new Vbo<T>(stride * drawMode.Size * sizeof(float), @static);
-      _vbo.Bind();
+      Vbo = new Vbo<T>(stride * drawMode.Size * sizeof(float), @static);
+      Vbo.Bind();
       _ibo = new Ibo(drawMode.Size * 128 * sizeof(float), @static);
       _ibo.Bind();
       _vao = new Vao(VertexTypes.Layouts[typeof(T)]);
@@ -34,40 +35,41 @@ namespace New.Engine
       _static = @static;
     }
 
-    public uint Next()
+    public int Next()
     {
-      return _vertex++;
+      return Vertex++;
     }
 
     public Mesh<T> Put(T vertex)
     {
-      _vbo.Put(vertex);
+      Vbo.Put(vertex);
       return this;
     }
 
-    public void Single(uint p0)
+    public void Single(int p0)
     {
       _ibo.Put(p0);
       _index++;
     }
 
-    public void Line(uint p0, uint p1)
+    public void Line(int p0, int p1)
     {
       _ibo.Put(p0);
       _ibo.Put(p1);
       _index += 2;
     }
 
-    public void Tri(uint p0, uint p1, uint p2)
+    public void Tri(int p0, int p1, int p2)
     {
       _ibo.Put(p0);
       _ibo.Put(p1);
       _ibo.Put(p2);
+      Tris.Add((p0, p1, p2));
       _index += 3;
       _tris++;
     }
 
-    public void Quad(uint p0, uint p1, uint p2, uint p3)
+    public void Quad(int p0, int p1, int p2, int p3)
     {
       _ibo.Put(p0);
       _ibo.Put(p1);
@@ -75,6 +77,8 @@ namespace New.Engine
       _ibo.Put(p2);
       _ibo.Put(p3);
       _ibo.Put(p0);
+      Tris.Add((p0, p1, p2));
+      Tris.Add((p2, p3, p0));
       _index += 6;
       _tris += 2;
     }
@@ -84,33 +88,28 @@ namespace New.Engine
       if (_building) throw new Exception("Already building");
       if (!_static)
       {
-        _vbo.Clear();
+        Vbo.Clear();
         _ibo.Clear();
         _tris = 0;
       }
 
-      _vertex = 0;
+      Vertex = 0;
       _index = 0;
       _building = true;
     }
 
     public void End()
     {
-      if (!_building) throw new Exception("Not building");
+      if (!_building && !Dirty) throw new Exception("Not building");
 
       if (_index > 0)
       {
-        _vbo.Upload();
+        Vbo.Upload();
         _ibo.Upload();
       }
 
-      if (_static)
-      {
-        _vbo.Clear();
-        _ibo.Clear();
-      }
-
       _building = false;
+      Dirty = false;
     }
 
     public void Render()
@@ -142,7 +141,7 @@ namespace New.Engine
       _shader?.SetDefaults();
       _vao.Bind();
       _ibo.Bind();
-      _vbo.Bind();
+      Vbo.Bind();
       GL.DrawElements(_drawMode.AsGl(), _index, DrawElementsType.UnsignedInt, 0);
       Ibo.Unbind();
       Vbo<T>.Unbind();
@@ -180,7 +179,7 @@ namespace New.Engine
       _shader?.SetDefaults();
       _vao.Bind();
       _ibo.Bind();
-      _vbo.Bind();
+      Vbo.Bind();
       GL.DrawElementsInstanced(_drawMode.AsGlPrim(), _index, DrawElementsType.UnsignedInt, IntPtr.Zero, numInstances);
       Ibo.Unbind();
       Vbo<T>.Unbind();
@@ -189,20 +188,36 @@ namespace New.Engine
       Fall.Tris += _tris * numInstances;
     }
 
-    public ref T ClosestVertex(Vector3 pos)
+    public (int, Vector3) ClosestVertex(Vector3 pos)
     {
-      int closest = 0;
-      float dist = (pos - _vbo.Vertices[0].Pos).LengthSquared;
-      for (int i = 1; i < _vbo.Vertices.Length; i++)
+      if (Vbo.Vertices == null)
       {
-        float d = (pos - _vbo.Vertices[i].Pos).LengthSquared;
-        if (!(d < dist)) continue;
+        throw new Exception("No vertices");
+      }
+      
+      int closest = 0;
+      float dist = (pos - Vbo.Vertices[0].Pos).LengthSquared;
+      for (int i = 1; i < Vbo.Vertices.Length; i++)
+      {
+        float d = (pos - Vbo.Vertices[i].Pos).LengthSquared;
+        if (d > dist) continue;
         
         dist = d;
         closest = i;
       }
       
-      return ref _vbo.Vertices[closest];
+      return (closest, Vbo.Vertices[closest].Pos);
+    }
+
+    public void SetPos(int index, Vector3 pos)
+    {
+      if (Vbo.Vertices == null)
+      {
+        throw new Exception("No vertices");
+      }
+      
+      Vbo.Vertices[index].Pos = pos;
+      Dirty = true;
     }
   }
 

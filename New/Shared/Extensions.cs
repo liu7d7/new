@@ -38,7 +38,7 @@ namespace New.Shared
   {
     private static bool _initialized;
     private static readonly Dictionary<string, Color4> _values = new();
-    private static readonly List<Color4> _colors = new();
+    private static readonly Vec<Color4> _colors = new();
 
     private static float _red, _blue, _green;
 
@@ -144,7 +144,7 @@ namespace New.Shared
       return o.ToString();
     }
 
-    public static Task ForEachAsync<T>(List<T> list, int batches, Func<T, Task> action)
+    public static Task ForEachAsync<T>(Vec<T> vec, int batches, Func<T, Task> action)
     {
       async Task partition(IEnumerator<T> part)
       {
@@ -154,7 +154,7 @@ namespace New.Shared
         }
       }
 
-      return Task.WhenAll(Partitioner.Create(list).GetPartitions(batches).AsParallel().Select(partition));
+      return Task.WhenAll(Partitioner.Create(vec).GetPartitions(batches).AsParallel().Select(partition));
     }
 
     public static Task ForAsync(Range list, int batches, Func<int, Task> action)

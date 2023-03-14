@@ -1,4 +1,5 @@
 using System.Buffers;
+using New.Engine;
 using New.Shared.Components;
 using OpenTK.Mathematics;
 
@@ -6,22 +7,6 @@ namespace New.Shared
 {
   public class Entity
   {
-    public enum CompType
-    {
-      NotAType,
-      Camera,
-      Collision,
-      FloatPos,
-      Model3D,
-      Player,
-      Snow,
-      Tag,
-      Tree,
-      Projectile,
-      FloatPosStatic,
-      Size
-    }
-
     public readonly Component[] Components = ArrayPool<Component>.Shared.Rent((int)CompType.Size);
     public readonly Guid Id = Guid.NewGuid();
     public bool Removed;
@@ -58,6 +43,17 @@ namespace New.Shared
     public T Get<T>(CompType t) where T : Component
     {
       return (T)Components[(int)t];
+    }
+    
+    public IPosProvider GetMesh()
+    {
+      for (int i = 0; i < Components.Length; i++)
+      {
+        if (Components[i] is IMeshSupplier meshSupplier)
+          return meshSupplier.Mesh;
+      }
+
+      return null;
     }
 
     public bool Has(CompType t)
@@ -111,5 +107,21 @@ namespace New.Shared
         return GetType().GetHashCode();
       }
     }
+  }
+
+  public enum CompType
+  {
+    NotAType,
+    Camera,
+    Collision,
+    FloatPos,
+    Model3D,
+    Player,
+    Snow,
+    Tag,
+    Tree,
+    Projectile,
+    FloatPosStatic,
+    Size
   }
 }

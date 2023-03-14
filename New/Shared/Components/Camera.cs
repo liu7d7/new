@@ -19,7 +19,7 @@ namespace New.Shared.Components
     public bool FirstMouse = true;
     public Vector3 Front;
 
-    public Camera() : base(Entity.CompType.Camera)
+    public Camera() : base(CompType.Camera)
     {
       Front = Vector3.Zero;
       _right = Vector3.Zero;
@@ -31,7 +31,7 @@ namespace New.Shared.Components
 
     public static Camera Get(Entity obj)
     {
-      return obj.Get<Camera>(Entity.CompType.Camera);
+      return obj.Get<Camera>(CompType.Camera);
     }
 
     public void UpdateCameraVectors()

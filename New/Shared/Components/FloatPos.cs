@@ -15,7 +15,7 @@ namespace New.Shared.Components
     public float Yaw;
     public float Z;
 
-    public FloatPos() : base(Entity.CompType.FloatPos)
+    public FloatPos() : base(CompType.FloatPos)
     {
       X = PrevX = Y = PrevY = Z = PrevZ = Yaw = PrevYaw = Pitch = PrevPitch = 0;
     }
@@ -28,7 +28,7 @@ namespace New.Shared.Components
 
     public static FloatPos Get(Entity obj)
     {
-      return obj.Get<FloatPos>(Entity.CompType.FloatPos);
+      return obj.Get<FloatPos>(CompType.FloatPos);
     }
 
     public Vector3 ToVec3()

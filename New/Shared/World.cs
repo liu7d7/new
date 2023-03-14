@@ -12,7 +12,7 @@ namespace New.Shared
     private static readonly Action<Entity> _ifRemoved = obj => { ArrayPool<Entity.Component>.Shared.Return(obj.Components, true); };
 
     private readonly Dictionary<Vector2i, Chunk> _chunks;
-    public readonly List<Entity> Objs = new();
+    public readonly Vec<Entity> Objs = new();
 
     private Vector2i _prevCPos;
 
@@ -90,61 +90,46 @@ namespace New.Shared
       return _chunks[pos.Xz.ToChunkPos()];
     }
 
-    public const float REACH = 24f; 
-    
+    public const float REACH = 24f;
+
     public HitResult Raycast(Vector3 eye, Vector3 dir, out float dist)
     {
       dist = REACH + 0.5f;
       Span<Entity> objs = Objs.Items;
       Vector3 b = new();
       Entity obj = null;
+      HitResultType type = HitResultType.None;
       for (int i = 0; i < Objs.Count; i++)
       {
         if ((eye - objs[i].Pos).LengthSquared > 1024) continue;
-        if (!objs[i].Has(Entity.CompType.Collision)) continue;
-      
-        Span<Box> boxes = objs[i].Get<Collision>(Entity.CompType.Collision).Boxes.Items;
-        for (int j = 0; j < boxes.Length; j++)
-        {
-          if (!boxes[j].RayCollides(objs[i].Pos, eye, dir, out float d)) continue;
-          if (!(d < dist) || d is > REACH or < 0) continue;
-          
-          dist = d;
-          b = eye + dir * d;
-          obj = objs[i];
-        }
-      }
-      
-      float x = eye.X, y = eye.Y, z = eye.Z;
-      float dx = dir.X, dy = dir.Y, dz = dir.Z;
-      float t = 0;
-      const float STEP = 1;
-      HitResultType type = HitResultType.None;
-      while (t < REACH)
-      {
-        float h = HeightAt(new(x, z));
-        if (y < h)
-        {
-          if (dist < t)
-          {
-            type = HitResultType.Entity;
-            break;
-          }
-          
-          dist = t;
-          type = HitResultType.Tile;
-          break;
-        }
+        if (!objs[i].Has(CompType.Collision)) continue;
 
-        x += dx * STEP;
-        y += dy * STEP;
-        z += dz * STEP;
-        t += STEP;
-      }
-      
-      if (type != HitResultType.Tile && dist <= REACH)
-      {
+        if (!objs[i].Get<Collision>(CompType.Collision).RayCollides(objs[i].Pos, eye, dir, out float d))
+          continue;
+
+        if (!(d < dist) || d is > REACH or < 0) continue;
+
+        dist = d;
+        b = eye + dir * d;
+        obj = objs[i];
         type = HitResultType.Entity;
+      }
+
+      Chunk chunk = null;
+      Vector2i chunkPos = eye.Xz.ToChunkPos();
+      for (int i = -1; i <= 1; i++)
+      for (int j = -1; j <= 1; j++)
+      {
+        Chunk c = _chunks[(i + chunkPos.X, j + chunkPos.Y)];
+        if (!c.Collision.RayCollides(Vector3.Zero, eye, dir, out float d))
+          continue;
+        
+        if (d > dist || d is > REACH or < 0) continue;
+        
+        dist = d;
+        b = eye + dir * d;
+        chunk = c;
+        type = HitResultType.Tile;
       }
 
       switch (type)
@@ -152,7 +137,7 @@ namespace New.Shared
         case HitResultType.Entity:
           return new HitResult(HitResultType.Entity, b.X, b.Y, b.Z, entity: obj);
         case HitResultType.Tile:
-          return new HitResult(HitResultType.Tile, x, y, z, chunk: ChunkAt(new(x, y, z)));
+          return new HitResult(HitResultType.Tile, b.X, b.Y, b.Z, chunk: chunk);
         case HitResultType.None:
           break;
       }
@@ -165,36 +150,38 @@ namespace New.Shared
   public class Chunk
   {
     public readonly Mesh<P> Mesh;
-    private const int _quality = 8, _quality1 = _quality + 1, _tileSize = 16 / _quality;
+    public readonly MeshCollision<P> Collision;
+    private const int _quality = 4, _quality1 = _quality + 1, _tileSize = 16 / _quality;
     private const int _size = 16;
     private const float _div = 24f;
 
     public Chunk(Vector2i chunkPos)
     {
       Mesh = new Mesh<P>(DrawMode.TRIANGLE, RenderSystem.BASIC, true);
+      Collision = new MeshCollision<P>(Mesh);
 
-      Span<uint> memo = stackalloc uint[_quality1 * _quality1];
-      memo.Fill(uint.MaxValue);
+      Span<int> memo = stackalloc int[_quality1 * _quality1];
+      memo.Fill(-1);
 
       Mesh.Begin();
       for (int i = 0; i < _quality; i++)
       for (int j = 0; j < _quality; j++)
       {
-        uint i1, i2, i3, i4;
+        int i1, i2, i3, i4;
         int ti = i * _tileSize + chunkPos.X * _size, tj = j * _tileSize + chunkPos.Y * _size;
-        if ((i1 = memo[i * _quality1 + j]) == uint.MaxValue)
+        if ((i1 = memo[i * _quality1 + j]) == -1)
           i1 = memo[i * _quality1 + j] =
             Mesh.Put(new(ti, Noise(ti, tj), tj)).Next();
 
-        if ((i2 = memo[(i + 1) * _quality1 + j]) == uint.MaxValue)
+        if ((i2 = memo[(i + 1) * _quality1 + j]) == -1)
           i2 = memo[(i + 1) * _quality1 + j] =
             Mesh.Put(new(ti + _tileSize, Noise(ti + _tileSize, tj), tj)).Next();
 
-        if ((i3 = memo[(i + 1) * _quality1 + j + 1]) == uint.MaxValue)
+        if ((i3 = memo[(i + 1) * _quality1 + j + 1]) == -1)
           i3 = memo[(i + 1) * _quality1 + j + 1] =
             Mesh.Put(new(ti + _tileSize, Noise(ti + _tileSize, tj + _tileSize), tj + _tileSize)).Next();
 
-        if ((i4 = memo[i * _quality1 + j + 1]) == uint.MaxValue)
+        if ((i4 = memo[i * _quality1 + j + 1]) == -1)
           i4 = memo[i * _quality1 + j + 1] =
             Mesh.Put(new(ti, Noise(ti, tj + _tileSize), tj + _tileSize)).Next();
         Mesh.Quad(i4, i3, i2, i1);

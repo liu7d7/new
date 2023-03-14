@@ -33,7 +33,7 @@ namespace New.Shared.Components
       _cape.End();
     }
 
-    public Player() : base(Entity.CompType.Player)
+    public Player() : base(CompType.Player)
     {
       _color = Colors.NextColor();
     }

@@ -4,10 +4,10 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace New.Engine
 {
-  public class Vbo<T> where T : struct
+  public class Vbo<T> where T : struct, IPos3d
   {
     public T[] Vertices;
-    
+
     private readonly int _handle;
     private readonly bool _static;
     private int _count;
@@ -56,12 +56,6 @@ namespace New.Engine
     {
       _count = 0;
       Array.Clear(Vertices, 0, _count);
-      if (_static) Dispose();
-    }
-
-    private void Dispose()
-    {
-      Vertices = null;
     }
   }
 }

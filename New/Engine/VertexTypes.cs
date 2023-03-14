@@ -7,7 +7,7 @@ namespace New.Engine
   public struct P : IPos3d
   {
     public Vector3 Pos { get; set; }
-
+    
     public P(float x, float y, float z)
     {
       Pos = new Vector3(x, y, z);

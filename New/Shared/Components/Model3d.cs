@@ -1,3 +1,5 @@
+// #define DEBUG
+
 using System.Globalization;
 using New.Engine;
 using OpenTK.Graphics.ES11;
@@ -11,11 +13,10 @@ namespace New.Shared.Components
     private static readonly Shader _shader;
     private static readonly Ubo _ubo;
     private readonly Face[] _faces;
-    private readonly Mesh<PC> _mesh;
-    private readonly List<Matrix4> _models = new();
+    public readonly Mesh<PC> Mesh;
+    private readonly Vec<Matrix4> _models = new();
 
     private readonly Vector3[] _vertices;
-    public List<Box> Collisions = new List<Box>();
 
     static Model3d()
     {
@@ -26,8 +27,8 @@ namespace New.Shared.Components
     private Model3d(string path, Dictionary<string, uint> colors)
     {
       Color4 mat = new(1f, 1f, 1f, 1f);
-      List<Face> faces = new();
-      List<Vector3> vertices = new();
+      Vec<Face> faces = new();
+      Vec<Vector3> vertices = new();
       Vector3 max = new(float.MinValue, float.MinValue, float.MinValue);
       Vector3 min = new(float.MaxValue, float.MaxValue, float.MaxValue);
       bool first = true;
@@ -51,14 +52,6 @@ namespace New.Shared.Components
             break;
           }
           case "o":
-            if (!first)
-            {
-              Collisions.Add(new Box(min, max));
-              max = new(float.MinValue, float.MinValue, float.MinValue);
-              min = new(float.MaxValue, float.MaxValue, float.MaxValue);
-            }
-
-            first = false;
             mat = Colors.NextColor();
             break;
           case "f":
@@ -78,13 +71,12 @@ namespace New.Shared.Components
           }
         }
       }
-      Collisions.Add(new Box(min, max));
 
       _components[path + colors.ContentToString()] = this;
       _vertices = vertices.ToArray();
       _faces = faces.ToArray();
 
-      _mesh = new Mesh<PC>(DrawMode.TRIANGLE, _shader, false);
+      Mesh = new Mesh<PC>(DrawMode.TRIANGLE, _shader, false);
       ToMesh((0, 0, 0));
     }
 
@@ -97,17 +89,6 @@ namespace New.Shared.Components
         vtx[i].Y *= scale;
         vtx[i].Z *= scale;
       }
-      
-      Span<Box> collisions = Collisions.Items;
-      for (int i = 0; i < collisions.Length; i++)
-      {
-        collisions[i].Min.X *= scale;
-        collisions[i].Min.Y *= scale;
-        collisions[i].Min.Z *= scale;
-        collisions[i].Max.X *= scale;
-        collisions[i].Max.Y *= scale;
-        collisions[i].Max.Z *= scale;
-      }
 
       ToMesh((0, 0, 0));
     }
@@ -119,21 +100,21 @@ namespace New.Shared.Components
 
     private void ToMesh(Vector3 pos)
     {
-      _mesh.Begin();
+      Mesh.Begin();
       Span<Face> faces = _faces;
       for (int i = 0; i < _faces.Length; i++)
       {
         Vector3 vt1 = _vertices[faces[i][0].Pos];
         Vector3 vt2 = _vertices[faces[i][1].Pos];
         Vector3 vt3 = _vertices[faces[i][2].Pos];
-        _mesh.Tri(
-          _mesh.Put(new(vt1 + pos, faces[i][0].Color)).Next(),
-          _mesh.Put(new(vt2 + pos, faces[i][1].Color)).Next(),
-          _mesh.Put(new(vt3 + pos, faces[i][2].Color)).Next()
+        Mesh.Tri(
+          Mesh.Put(new(vt1 + pos, faces[i][0].Color)).Next(),
+          Mesh.Put(new(vt2 + pos, faces[i][1].Color)).Next(),
+          Mesh.Put(new(vt3 + pos, faces[i][2].Color)).Next()
         );
       }
 
-      _mesh.End();
+      Mesh.End();
     }
 
     public void Render(Vector3 pos)
@@ -147,7 +128,7 @@ namespace New.Shared.Components
       {
         Model3d model = pair.Value;
         if (model._models.Count == 0) continue;
-        Mesh<PC> mesh = model._mesh;
+        Mesh<PC> mesh = model.Mesh;
 
         Matrix4[] models = model._models.Items;
 
@@ -170,12 +151,13 @@ namespace New.Shared.Components
         : new Model3d(path, colors);
     }
 
-    public class Component : Entity.Component
+    public class Component : Entity.Component, IMeshSupplier
     {
       public readonly Model3d Model;
+      public IPosProvider Mesh => Model.Mesh;
       private readonly float _rotation;
 
-      public Component(Model3d model, float rot) : base(Entity.CompType.Model3D)
+      public Component(Model3d model, float rot) : base(CompType.Model3D)
       {
         Model = model;
         _rotation = rot;
@@ -191,6 +173,32 @@ namespace New.Shared.Components
         RenderSystem.Translate(objIn.LerpedPos);
         Model.Render(objIn.LerpedPos);
         RenderSystem.Pop();
+        
+#if DEBUG
+        Span<Box> boxes = Model.Collisions.Items;
+        RenderSystem.LINE.Begin();
+        for (int i = 0; i < boxes.Length; i++)
+        {
+          Vector3 min = boxes[i].Min + objIn.LerpedPos;
+          Vector3 max = boxes[i].Max + objIn.LerpedPos;
+          // draw each edge
+          RenderSystem.Line(new Vector3(min.X, min.Y, min.Z), new Vector3(max.X, min.Y, min.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(min.X, min.Y, min.Z), new Vector3(min.X, max.Y, min.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(min.X, min.Y, min.Z), new Vector3(min.X, min.Y, max.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, max.Y, max.Z), new Vector3(min.X, max.Y, max.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, max.Y, max.Z), new Vector3(max.X, min.Y, max.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, max.Y, max.Z), new Vector3(max.X, max.Y, min.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(min.X, max.Y, max.Z), new Vector3(min.X, max.Y, min.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(min.X, max.Y, max.Z), new Vector3(min.X, min.Y, max.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, min.Y, min.Z), new Vector3(max.X, max.Y, min.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, min.Y, min.Z), new Vector3(max.X, min.Y, max.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, min.Y, max.Z), new Vector3(min.X, min.Y, max.Z), 3, Fall.PINK0);
+          RenderSystem.Line(new Vector3(max.X, max.Y, min.Z), new Vector3(min.X, max.Y, min.Z), 3, Fall.PINK0);
+        }
+        GL.DepthFunc(DepthFunction.Always);
+        RenderSystem.LINE.Render();
+        GL.DepthFunc(DepthFunction.Lequal);
+#endif
       }
     }
   }

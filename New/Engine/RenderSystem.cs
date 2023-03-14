@@ -263,7 +263,7 @@ namespace New.Engine
 
     public static void UpdateLookAt(Entity cameraObj, bool rendering3d = true)
     {
-      if (!cameraObj.Has(Entity.CompType.FloatPos)) return;
+      if (!cameraObj.Has(CompType.FloatPos)) return;
 
       _camera = FloatPos.Get(cameraObj);
       Rendering3d = rendering3d;
@@ -279,9 +279,9 @@ namespace New.Engine
 
     public static Vector3 Project(Vector3 worldPos)
     {
-      Vector4 clip = _proj * _look * new Vector4(worldPos, 1);
-      int winX = (int) MathF.Round((clip.X / clip.W + 1) / 2f * Fall.Instance.Size.X);
-      int winY = (int) MathF.Round((1 - clip.Y / clip.W) / 2f * Fall.Instance.Size.Y);
+      Vector4 clip = new Vector4(worldPos, 1) * _look * _proj;
+      float winX = (clip.X / clip.Z + 1) / 2f * Fall.Instance.Size.X;
+      float winY = (1 - clip.Y / clip.Z) / 2f * Fall.Instance.Size.Y;
       return (winX, winY, clip.Z);
     }
   }

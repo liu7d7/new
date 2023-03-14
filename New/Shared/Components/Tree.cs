@@ -2,7 +2,7 @@ namespace New.Shared.Components
 {
   public class Tree : Entity.Component
   {
-    public Tree() : base(Entity.CompType.Tree)
+    public Tree() : base(CompType.Tree)
     {
     }
 
