@@ -1,0 +1,4 @@
+xcopy "C:\Users\richard may clarkson\RiderProjects\New\New\Resource" "C:\Users\richard may clarkson\RiderProjects\New\New\bin\Debug\net6.0\Resource" /E /H /C /R /Q /Y
+xcopy "C:\Users\richard may clarkson\RiderProjects\New\New\Resource" "C:\Users\richard may clarkson\RiderProjects\New\New\bin\Debug\net7.0\Resource" /E /H /C /R /Q /Y
+xcopy "C:\Users\richard may clarkson\RiderProjects\New\New\Resource" "C:\Users\richard may clarkson\RiderProjects\New\New\bin\Release\net6.0\Resource" /E /H /C /R /Q /Y
+xcopy "C:\Users\richard may clarkson\RiderProjects\New\New\Resource" "C:\Users\richard may clarkson\RiderProjects\New\New\bin\Release\net7.0\Resource" /E /H /C /R /Q /Y
