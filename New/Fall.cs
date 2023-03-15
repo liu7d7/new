@@ -22,7 +22,6 @@ namespace New
     public static uint Frames;
     public static int InView;
     public static int Tris;
-    public static bool FarCamera;
     public static bool FirstPerson;
     public static HitResult HitResult = new HitResult();
 
@@ -311,8 +310,6 @@ namespace New
 
       if (KeyboardState.IsKeyPressed(Keys.O))
         _outline = !_outline;
-      if (KeyboardState.IsKeyPressed(Keys.C))
-        FarCamera = !FarCamera;
       if (KeyboardState.IsKeyPressed(Keys.F11))
         WindowState = WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
       if (KeyboardState.IsKeyPressed(Keys.F5))

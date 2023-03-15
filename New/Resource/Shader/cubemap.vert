@@ -9,6 +9,6 @@ uniform mat4 _look;
 
 void main()
 {
-    TexCoords = texCoord;
-    gl_Position = _proj * _look * vec4(aPos, 1.0);
+  TexCoords = texCoord;
+  gl_Position = _proj * _look * vec4(aPos, 1.0);
 }

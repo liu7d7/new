@@ -11,7 +11,7 @@ out vec4 v_col;
 out noperspective float v_line_width;
 
 void main() {
-    v_col = col;
-    v_line_width = width;
-    gl_Position = _proj * _look * vec4(pos.xyz, 1.0);
+  v_col = col;
+  v_line_width = width;
+  gl_Position = _proj * _look * vec4(pos.xyz, 1.0);
 }

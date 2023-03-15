@@ -112,11 +112,14 @@ namespace New.Shared.Components
       float yawAdd = (Animate(_leftp) - Animate(_rightp)) * 20;
       lyaw += yawAdd;
 
+      bool cull = RenderSystem.Culling;
+      RenderSystem.Culling = false;
       _capeShader.Bind();
       _capeShader.SetFloat("_yaw", lyaw);
       _capeShader.SetVector3("_translation", renderPos + (-0.15f * MathF.Cos(lyaw.Rad()), -2, -0.15f * MathF.Sin(lyaw.Rad())));
       _capeShader.SetVector4("_color", _color.ToVector4());
       _cape.Render();
+      RenderSystem.Culling = cull;
     }
 
     private void RenderHand(Entity objIn, float lyaw, float progress, int side, Vector3 renderPos, Vector3 handBaseOffset, Vector3 handFullOffset, float scale, float handBaseOff, bool fp = false)
@@ -131,7 +134,7 @@ namespace New.Shared.Components
       RenderSystem.Translate(handRenderPos);
       if (fp)
       {
-        Vector3 head = renderPos + _eyeOffset;
+        Vector3 head = Camera.Get(objIn).Eye();
         RenderSystem.Translate(-head);
         RenderSystem.Rotate(objIn.LerpedPitch, Camera.Get(objIn).Right);
         RenderSystem.Translate(head);

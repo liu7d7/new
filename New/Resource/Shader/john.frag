@@ -9,9 +9,9 @@ in vec4 v_Color;
 in vec2 v_TexCoords;
 
 void main() {
-    if (_renderingRed == 1) {
-        color = v_Color * vec4(1.0, 1.0, 1.0, texture(_tex0, v_TexCoords).r);
-        return;
-    }
-    color = v_Color;
+  if (_renderingRed == 1) {
+    color = v_Color * vec4(1.0, 1.0, 1.0, texture(_tex0, v_TexCoords).r);
+    return;
+  }
+  color = v_Color;
 }

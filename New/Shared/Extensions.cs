@@ -40,7 +40,7 @@ namespace New.Shared
     private static readonly Dictionary<string, Color4> _values = new();
     private static readonly Vec<Color4> _colors = new();
 
-    private static float _red, _blue, _green;
+    private static float _red, _blue = 0.75f, _green = 1.5f;
 
     public static Color4 GetColor(string color)
     {
@@ -67,12 +67,12 @@ namespace New.Shared
 
     public static Color4 NextColor()
     {
-      _red += RenderSystem.THRESHOLD + 0.00001f;
-      _blue += RenderSystem.THRESHOLD + 0.00001f;
-      _green += RenderSystem.THRESHOLD + 0.00001f;
-      _red %= 1f;
-      _blue %= 1f;
-      _green %= 1f;
+      _red += RenderSystem.THRESHOLD * 2;
+      _blue += RenderSystem.THRESHOLD * 2;
+      _green += RenderSystem.THRESHOLD * 2;
+      _red %= 2f;
+      _blue %= 2f;
+      _green %= 2f;
       return new Color4(_red, _green, _blue, 1f);
     }
     

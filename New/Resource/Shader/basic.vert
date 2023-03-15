@@ -8,6 +8,6 @@ uniform mat4 _proj;
 uniform mat4 _look;
 
 void main() {
-    gl_Position = _proj * _look * vec4(aPos, 1.0);
-    vtColor = vec4(vec3(3), 1.0);
+  gl_Position = _proj * _look * vec4(aPos, 1.0);
+  vtColor = vec4(vec3(0.5), 1.0);
 }
