@@ -89,14 +89,11 @@ namespace New
             Updates = true
           };
           Model3d.Component comp = new(models[Rand.Next(0, 5)], 0);
-          FloatPosStatic pos = new()
-          {
-            X = i * 50 + Rand.NextFloat(-12.5f, 12.5f),
-            Z = j * 50 + Rand.NextFloat(-12.5f, 12.5f)
-          };
-          pos.Y = World.HeightAt((pos.X, pos.Z)) - 2f;
+          obj.X = i * 50 + Rand.NextFloat(-12.5f, 12.5f);
+          obj.Z = j * 50 + Rand.NextFloat(-12.5f, 12.5f);
+          obj.Y = World.HeightAt((obj.X, obj.Z)) - 2f;
+          obj.SetPrev();
           obj.Add(comp);
-          obj.Add(pos);
           obj.Add(new Tree());
           obj.Add(new MeshCollision<PC>(comp.Model.Mesh));
           World.Objs.Add(obj);
@@ -130,13 +127,10 @@ namespace New
             Entity obj = new();
             Model3d.Component comp = new(models[Rand.Next(0, 3)], 0);
             obj.Add(comp);
-            FloatPosStatic pos = new()
-            {
-              X = ipos + Rand.NextFloat(-24, 24),
-              Z = jpos + Rand.NextFloat(-24, 24)
-            };
-            pos.Y = World.HeightAt((pos.X, pos.Z)) - 2f;
-            obj.Add(pos);
+            obj.X = ipos + Rand.NextFloat(-24, 24);
+            obj.Z = jpos + Rand.NextFloat(-24, 24);
+            obj.Y = World.HeightAt((obj.X, obj.Z)) - 2f;
+            obj.SetPrev();
             obj.Add(new MeshCollision<PC>(comp.Model.Mesh));
             World.Objs.Add(obj);
           }
@@ -150,12 +144,10 @@ namespace New
           Updates = true
         };
         Player.Add(new Player());
-        Player.Add(new FloatPos());
         Player.Add(new Camera());
-        FloatPos pos = FloatPos.Get(Player);
-        pos.Yaw = pos.PrevYaw = 180;
-        pos.X = pos.PrevX = pos.Z = pos.PrevZ = -1;
-        pos.Y = pos.PrevY = 25;
+        Player.Yaw = Player.PrevYaw = 180;
+        Player.X = Player.PrevX = Player.Z = Player.PrevZ = -1;
+        Player.Y = Player.PrevY = 25;
         Player.Update();
       }
 
@@ -199,7 +191,7 @@ namespace New
     {
       base.OnRenderFrame(args);
 
-      Camera.Get(Player).UpdateCameraVectors();
+      Camera.Get(Player).UpdateCameraVectors(Player);
 
       Fbo.Unbind();
       GL.ClearColor(_backgroundColor);
@@ -330,7 +322,7 @@ namespace New
 
       World.Update();
       
-      Vector3 eye = Player.Get<FloatPos>(CompType.FloatPos).ToLerpedVec3() + (0, 5, 0);
+      Vector3 eye = Player.LerpedPos + (0, 5, 0);
       Vector3 dir = Player.Get<Camera>(CompType.Camera).Front;
       HitResult = World.Raycast(eye, dir);
 

@@ -1,8 +1,5 @@
-// #define DEBUG
-
 using System.Globalization;
 using New.Engine;
-using OpenTK.Graphics.ES11;
 using OpenTK.Mathematics;
 
 namespace New.Shared.Components
@@ -173,32 +170,6 @@ namespace New.Shared.Components
         RenderSystem.Translate(objIn.LerpedPos);
         Model.Render(objIn.LerpedPos);
         RenderSystem.Pop();
-        
-#if DEBUG
-        Span<Box> boxes = Model.Collisions.Items;
-        RenderSystem.LINE.Begin();
-        for (int i = 0; i < boxes.Length; i++)
-        {
-          Vector3 min = boxes[i].Min + objIn.LerpedPos;
-          Vector3 max = boxes[i].Max + objIn.LerpedPos;
-          // draw each edge
-          RenderSystem.Line(new Vector3(min.X, min.Y, min.Z), new Vector3(max.X, min.Y, min.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(min.X, min.Y, min.Z), new Vector3(min.X, max.Y, min.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(min.X, min.Y, min.Z), new Vector3(min.X, min.Y, max.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, max.Y, max.Z), new Vector3(min.X, max.Y, max.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, max.Y, max.Z), new Vector3(max.X, min.Y, max.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, max.Y, max.Z), new Vector3(max.X, max.Y, min.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(min.X, max.Y, max.Z), new Vector3(min.X, max.Y, min.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(min.X, max.Y, max.Z), new Vector3(min.X, min.Y, max.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, min.Y, min.Z), new Vector3(max.X, max.Y, min.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, min.Y, min.Z), new Vector3(max.X, min.Y, max.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, min.Y, max.Z), new Vector3(min.X, min.Y, max.Z), 3, Fall.PINK0);
-          RenderSystem.Line(new Vector3(max.X, max.Y, min.Z), new Vector3(min.X, max.Y, min.Z), 3, Fall.PINK0);
-        }
-        GL.DepthFunc(DepthFunction.Always);
-        RenderSystem.LINE.Render();
-        GL.DepthFunc(DepthFunction.Lequal);
-#endif
       }
     }
   }

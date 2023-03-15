@@ -52,16 +52,15 @@ namespace New.Shared.Components
     public override void Update(Entity objIn)
     {
       base.Update(objIn);
+      
+      objIn.SetPrev();
 
-      FloatPos pos = FloatPos.Get(objIn);
-      pos.SetPrev();
-
-      if (pos.Y > World.HeightAt((pos.X, pos.Z)) - 0.5f)
+      if (objIn.Y > World.HeightAt((objIn.X, objIn.Z)) - 0.5f)
       {
         float x = ((Environment.TickCount + _offset) / 3f % 360f).Rad();
-        pos.X += _dir.X * (MathF.Sin(x * 0.5f) / 4f + 1.5f);
-        pos.Y += _dir.Y * (MathF.Sin(x * 1.6f) * MathF.Sin(x * 1.3f) * MathF.Sin(x * 0.7f)) - 0.1f;
-        pos.Z += _dir.Z * (MathF.Cos(x * 0.5f) / 4f + 1.5f);
+        objIn.X += _dir.X * (MathF.Sin(x * 0.5f) / 4f + 1.5f);
+        objIn.Y += _dir.Y * (MathF.Sin(x * 1.6f) * MathF.Sin(x * 1.3f) * MathF.Sin(x * 0.7f)) - 0.1f;
+        objIn.Z += _dir.Z * (MathF.Cos(x * 0.5f) / 4f + 1.5f);
       }
       else if (System.Math.Abs(_landing - float.MaxValue) < 0.3f)
       {

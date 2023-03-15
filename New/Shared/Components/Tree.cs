@@ -17,10 +17,9 @@ namespace New.Shared.Components
         Updates = true
       };
       obj.Add(new Snow());
-      obj.Add(new FloatPos
-      {
-        X = objIn.Pos.X, Y = objIn.Pos.Y + 16 + Rand.NextFloat(0, 12), Z = objIn.Pos.Z
-      });
+      obj.X = objIn.Pos.X;
+      obj.Y = objIn.Pos.Y + 16 + Rand.NextFloat(0, 12);
+      obj.Z = objIn.Pos.Z;
       Fall.World.Objs.Add(obj);
     }
   }

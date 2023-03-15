@@ -42,7 +42,7 @@ namespace New.Engine
     public static bool Rendering3d;
     public static bool Culling = true;
     public static bool RenderingRed;
-    private static FloatPos _camera;
+    private static Entity _camera;
 
     static RenderSystem()
     {
@@ -85,6 +85,12 @@ namespace New.Engine
     {
       Model.Rotate(angle, x, y, z);
     }
+    
+    public static void Rotate(float angle, Vector3 v)
+    {
+      Model.Rotate(angle, v.X, v.Y, v.Z);
+    }
+
 
     public static void Scale(float scale)
     {
@@ -263,9 +269,7 @@ namespace New.Engine
 
     public static void UpdateLookAt(Entity cameraObj, bool rendering3d = true)
     {
-      if (!cameraObj.Has(CompType.FloatPos)) return;
-
-      _camera = FloatPos.Get(cameraObj);
+      _camera = cameraObj;
       Rendering3d = rendering3d;
       if (!Rendering3d)
       {

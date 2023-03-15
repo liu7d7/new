@@ -30,10 +30,9 @@ namespace New.Shared.Components
     public override void Update(Entity objIn)
     {
       base.Update(objIn);
-
-      FloatPos pos = FloatPos.Get(objIn);
-      pos.SetPrev();
-      pos.IncVec3(_dir * _speed);
+      
+      objIn.SetPrev();
+      objIn.IncVec3(_dir * _speed);
     }
   }
 }

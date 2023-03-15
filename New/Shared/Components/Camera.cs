@@ -11,8 +11,8 @@ namespace New.Shared.Components
     private readonly Vector3 _up;
     private float _lastX;
     private float _lastY;
-    private FloatPos _pos;
-    private Vector3 _right;
+    private Entity me;
+    public Vector3 Right;
 
     private Vector3 _velocity;
 
@@ -22,7 +22,7 @@ namespace New.Shared.Components
     public Camera() : base(CompType.Camera)
     {
       Front = Vector3.Zero;
-      _right = Vector3.Zero;
+      Right = Vector3.Zero;
       _up = Vector3.UnitY;
       _lastX = 0;
     }
@@ -34,21 +34,21 @@ namespace New.Shared.Components
       return obj.Get<Camera>(CompType.Camera);
     }
 
-    public void UpdateCameraVectors()
+    public void UpdateCameraVectors(Entity e)
     {
-      Front = new Vector3(MathF.Cos(_pos.LerpedPitch.Rad()) * MathF.Cos(_pos.LerpedYaw.Rad()),
-        MathF.Sin(_pos.LerpedPitch.Rad()),
-        MathF.Cos(_pos.LerpedPitch.Rad()) * MathF.Sin(_pos.LerpedYaw.Rad())).Normalized();
-      _right = Vector3.Cross(Front, _up).Normalized();
+      Front = new Vector3(MathF.Cos(e.LerpedPitch.Rad()) * MathF.Cos(e.LerpedYaw.Rad()),
+        MathF.Sin(e.LerpedPitch.Rad()),
+        MathF.Cos(e.LerpedPitch.Rad()) * MathF.Sin(e.LerpedYaw.Rad())).Normalized();
+      Right = Vector3.Cross(Front, _up).Normalized();
     }
 
     public override void Update(Entity objIn)
     {
       base.Update(objIn);
-
-      _pos ??= FloatPos.Get(objIn);
-
-      _pos.SetPrev();
+      
+      me = objIn;
+      
+      me.SetPrev();
 
       OnMouseMove();
 
@@ -59,15 +59,15 @@ namespace New.Shared.Components
       if (kb.IsKeyDown(Keys.S)) forwards--;
       if (kb.IsKeyDown(Keys.A)) rightwards--;
       if (kb.IsKeyDown(Keys.D)) rightwards++;
-      Vector3 current = _pos.ToVec3();
+      Vector3 current = me.ToVec3();
       Vector3 twoD = Front * (1, 0, 1);
       if (twoD != Vector3.Zero)
         twoD.Normalize();
       _velocity += twoD * forwards;
-      _velocity += _right * rightwards;
+      _velocity += Right * rightwards;
       _velocity.Y -= 0.2f;
       current += _velocity;
-      float height = World.HeightAt((_pos.X, _pos.Z));
+      float height = World.HeightAt((me.X, me.Z));
       if (current.Y < height)
       {
         current.Y = height;
@@ -75,7 +75,7 @@ namespace New.Shared.Components
       }
 
       _velocity.Xz *= 0.5f;
-      _pos.SetVec3(current);
+      me.SetVec3(current);
     }
 
     private void OnMouseMove()
@@ -101,20 +101,20 @@ namespace New.Shared.Components
       xOffset *= SENSITIVITY;
       yOffset *= SENSITIVITY;
 
-      _pos.Yaw += xOffset;
-      _pos.Pitch += yOffset;
+      me.Yaw += xOffset;
+      me.Pitch += yOffset;
 
-      if (_pos.Pitch > 89.0f)
-        _pos.Pitch = 89.0f;
-      if (_pos.Pitch < -89.0f)
-        _pos.Pitch = -89.0f;
+      if (me.Pitch > 89.0f)
+        me.Pitch = 89.0f;
+      if (me.Pitch < -89.0f)
+        me.Pitch = -89.0f;
     }
 
     public Vector3 Eye()
     {
       if (Fall.FirstPerson)
       {
-        return _pos.ToLerpedVec3() + (0, 5, 0);
+        return me.ToLerpedVec3() + (0, 5, 0);
       }
 
       Vector3 ret = Target() - Front * (Fall.FarCamera ? 625f : 25f);
@@ -131,14 +131,15 @@ namespace New.Shared.Components
       }
       else
       {
-        return _pos.ToLerpedVec3() + (0, 4, 0);
+        return me.ToLerpedVec3() + (0, 4, 0);
       }
     }
 
     public Matrix4 GetCameraMatrix()
     {
-      if (_pos == null)
+      if (me == null)
         return Matrix4.Identity;
+      UpdateCameraVectors(me);
       if (Fall.FirstPerson)
       {
         Vector3 eye = Eye();

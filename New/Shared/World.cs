@@ -56,7 +56,7 @@ namespace New.Shared
     public void Render()
     {
       Vector2i chunkPos = Fall.Player.Pos.Xz.ToChunkPos();
-      float lyaw = FloatPos.Get(Fall.Player).LerpedYaw;
+      float lyaw = Fall.Player.LerpedYaw;
       for (int i = -8; i <= 8; i++)
       for (int j = -8; j <= 8; j++)
       {
@@ -101,7 +101,7 @@ namespace New.Shared
       HitResultType type = HitResultType.None;
       for (int i = 0; i < Objs.Count; i++)
       {
-        if ((eye - objs[i].Pos).LengthSquared > 1024) continue;
+        if ((eye - objs[i].Pos).LengthSquared > 676) continue;
         if (!objs[i].Has(CompType.Collision)) continue;
 
         if (!objs[i].Get<Collision>(CompType.Collision).RayCollides(objs[i].Pos, eye, dir, out float d))

@@ -80,28 +80,34 @@ namespace New.Shared.Components
         RenderThirdPerson(objIn);
       }
     }
+    
+    private static readonly Vector3 _headOffset = (0f, 4.5f, 0f);
+    private static readonly Vector3 _eyeOffset = (0f, 5f, 0f);
 
     private void RenderFirstPerson(Entity objIn)
     {
+      Vector3 renderPos = objIn.LerpedPos;
+      float lyaw = objIn.LerpedYaw + 180;
+
+      RenderHand(objIn, lyaw, _leftp, 1, renderPos, (1.2f, 4.75f, 1.2f), (1.15f, 0f, 1.15f), 0.13f, 22.5f, true);
+      RenderHand(objIn, lyaw, _rightp, -1, renderPos, (1.2f, 4.75f, 1.2f), (1.15f, 0f, 1.15f), 0.13f, 22.5f, true);
     }
 
     private void RenderThirdPerson(Entity objIn)
     {
       Vector3 renderPos = objIn.LerpedPos;
 
-      Vector3 headOffset = (0f, 4.5f, 0f);
-
       RenderSystem.Push();
-      RenderSystem.Translate(-renderPos - headOffset);
+      RenderSystem.Translate(-renderPos - _headOffset);
       RenderSystem.Scale(0.66f);
-      RenderSystem.Translate(renderPos + headOffset);
-      _head.Render(renderPos + headOffset);
+      RenderSystem.Translate(renderPos + _headOffset);
+      _head.Render(renderPos + _headOffset);
       RenderSystem.Pop();
 
-      float lyaw = FloatPos.Get(objIn).LerpedYaw + 180;
+      float lyaw = objIn.LerpedYaw + 180;
 
-      RenderHand(lyaw, _leftp, 1, renderPos);
-      RenderHand(lyaw, _rightp, -1, renderPos);
+      RenderHand(objIn, lyaw, _leftp, 1, renderPos, (1f, 3f, 1f), (1.75f, 0f, 1.75f), 0.33f, 80);
+      RenderHand(objIn, lyaw, _rightp, -1, renderPos, (1f, 3f, 1f), (1.75f, 0f, 1.75f), 0.33f, 80);
 
       float yawAdd = (Animate(_leftp) - Animate(_rightp)) * 20;
       lyaw += yawAdd;
@@ -113,18 +119,24 @@ namespace New.Shared.Components
       _cape.Render();
     }
 
-    private void RenderHand(float lyaw, float progress, int side, Vector3 renderPos)
+    private void RenderHand(Entity objIn, float lyaw, float progress, int side, Vector3 renderPos, Vector3 handBaseOffset, Vector3 handFullOffset, float scale, float handBaseOff, bool fp = false)
     {
       float prog = Fall.Now - progress is > 0 and < 400 ? HandAnimation((float)GLFW.GetTime() * 1000f - progress, 400) : 0;
-      Vector3 handBaseOffset = new Vector3(1f, 3f, 1f);
-      Vector3 handFullOffset = (1.75f, 0f, 1.75f);
-      Vector3 rotation = (MathF.Cos((lyaw + 180 - 80 * side).Rad()), 1f, MathF.Sin((lyaw + 180 - 80 * side).Rad()));
+      Vector3 rotation = (MathF.Cos((lyaw + 180 - handBaseOff * side).Rad()), 1f, MathF.Sin((lyaw + 180 - handBaseOff * side).Rad()));
       Vector3 handRotation = (MathF.Cos((lyaw + 180 + 20 * prog * side).Rad()), 1f, MathF.Sin((lyaw + 180 + 20 * prog * side).Rad()));
       Vector3 handRenderPos = renderPos + handBaseOffset * rotation + handFullOffset * prog * handRotation;
       RenderSystem.Push();
       RenderSystem.Translate(-handRenderPos);
-      RenderSystem.Scale(0.33f);
+      RenderSystem.Scale(scale);
       RenderSystem.Translate(handRenderPos);
+      if (fp)
+      {
+        Vector3 head = renderPos + _eyeOffset;
+        RenderSystem.Translate(-head);
+        RenderSystem.Rotate(objIn.LerpedPitch, Camera.Get(objIn).Right);
+        RenderSystem.Translate(head);
+      }
+
       _hands.Render(handRenderPos);
       RenderSystem.Pop();
     }

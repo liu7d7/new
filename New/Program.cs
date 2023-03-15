@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-using New.Engine;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
