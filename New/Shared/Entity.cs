@@ -80,32 +80,32 @@ namespace New.Shared
     {
       return Id.GetHashCode();
     }
+  }
 
-    public class Component
+  public class Component
+  {
+    public readonly CompType Type;
+
+    protected Component(CompType type)
     {
-      public readonly CompType Type;
+      Type = type;
+    }
 
-      protected Component(CompType type)
-      {
-        Type = type;
-      }
+    public virtual void Update(Entity objIn)
+    {
+    }
 
-      public virtual void Update(Entity objIn)
-      {
-      }
+    public virtual void Render(Entity objIn)
+    {
+    }
 
-      public virtual void Render(Entity objIn)
-      {
-      }
+    public virtual void Collide(Entity objIn, Entity other)
+    {
+    }
 
-      public virtual void Collide(Entity objIn, Entity other)
-      {
-      }
-
-      public override int GetHashCode()
-      {
-        return GetType().GetHashCode();
-      }
+    public override int GetHashCode()
+    {
+      return GetType().GetHashCode();
     }
   }
 

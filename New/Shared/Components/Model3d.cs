@@ -151,7 +151,7 @@ namespace New.Shared.Components
         : new Model3d(path, colors);
     }
 
-    public class Component : Entity.Component, IMeshSupplier
+    public class Component : Shared.Component, IMeshSupplier
     {
       public readonly Model3d Model;
       public IPosProvider Mesh => Model.Mesh;

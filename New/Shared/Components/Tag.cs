@@ -1,6 +1,6 @@
 namespace New.Shared.Components
 {
-  public class Tag : Entity.Component
+  public class Tag : Component
   {
     public int Id;
     public string Name;

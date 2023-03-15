@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 
 namespace New.Shared.Components
 {
-  public class Snow : Entity.Component
+  public class Snow : Component
   {
     public const int MODEL_COUNT = 2;
     private static readonly Model3d[] _snow;

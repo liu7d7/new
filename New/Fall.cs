@@ -8,7 +8,6 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using Math = System.Math;
 
 namespace New
 {
@@ -24,17 +23,22 @@ namespace New
     public static int InView;
     public static int Tris;
     public static bool FarCamera;
-    public static bool FirstPerson = true;
+    public static bool FirstPerson;
+    public static HitResult HitResult = new HitResult();
 
     private static readonly DebugProc _debugProcCallback = DebugCallback;
-    private static GCHandle _debugProcCallbackHandle;
     private static readonly Keys[] _keys = (Keys[])Enum.GetValues(typeof(Keys));
     private static readonly HashSet<Keys> _keysDown = new();
+    private static GCHandle _debugProcCallbackHandle;
+    private static float _lastTick;
     private readonly Color4 _backgroundColor = Colors.NextColor();
     private readonly RollingAvg _mspf = new(120);
     private int _lastInquiry;
     private int _memUsage;
-    private bool _outline;
+    private bool _outline = true;
+
+    public static float Now => (float)GLFW.GetTime() * 1000f;
+    public static float TickDelta => (Now - _lastTick) / 50f;
 
     public Fall(GameWindowSettings windowSettings, NativeWindowSettings nativeWindowSettings) : base(windowSettings,
       nativeWindowSettings)
@@ -224,23 +228,10 @@ namespace New
       Fbo.Unbind();
 
       RenderSystem.FRAME0.Blit();
-      
-      Vector3 eye = Player.Get<FloatPos>(CompType.FloatPos).ToLerpedVec3() + (0, 5, 0);
-      Vector3 dir = Player.Get<Camera>(CompType.Camera).Front;
-      HitResult res = World.Raycast(eye, dir, out float dist);
-      Chunk c = res.Chunk;
-      Entity e = res.Entity;
-      (int, Vector3) p = c != null ? c.Mesh.ClosestVertex(res.Hit) : e?.GetMesh() != null ? e.GetMesh().ClosestVertex(res.Hit - e.Pos) : (0, Vector3.Zero);
-      if (e?.GetMesh() != null)
-      {
-        p.Item2 += e.Pos;
-      }
-      
-      Vector3 sc = RenderSystem.Project(p.Item2);
 
       RenderSystem.UpdateLookAt(Player, false);
       RenderSystem.UpdateProjection();
-      
+
       if (FirstPerson)
       {
         RenderSystem.QUADS.Begin();
@@ -250,7 +241,7 @@ namespace New
           RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(5, 5, 0), PINK0)).Next(),
           RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-5, 5, 0), PINK0)).Next()
         );
-        if (res.Type != HitResultType.None)
+        if (HitResult.Type != HitResultType.None)
         {
           RenderSystem.QUADS.Quad(
             RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-3, -3, 0), 0xffffffff)).Next(),
@@ -259,44 +250,9 @@ namespace New
             RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-3, 3, 0), 0xffffffff)).Next()
           );
         }
-
-        switch (res.Type)
-        {
-          case HitResultType.Entity:
-            RenderSystem.QUADS.Quad(
-              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, -3, 0), Color4.Cyan.ToVector4())).Next(),
-              RenderSystem.QUADS.Put(new(sc + new Vector3(3, -3, 0), Color4.Cyan.ToVector4())).Next(),
-              RenderSystem.QUADS.Put(new(sc + new Vector3(3, 3, 0), Color4.Cyan.ToVector4())).Next(),
-              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, 3, 0), Color4.Cyan.ToVector4())).Next()
-            );
-            if (KeyboardState.IsKeyDown(Keys.Space))
-            {
-              (int, Vector3) lookup = e.GetMesh().ClosestVertex(res.Hit);
-              e.GetMesh().SetPos(lookup.Item1, lookup.Item2 + (0, 1, 0));
-              (int, Vector3) lookup1 = e.GetMesh().ClosestVertex(res.Hit);
-              Console.WriteLine(lookup);
-              Console.WriteLine(lookup1);
-              e.GetMesh().End();
-            }
-            break;
-          case HitResultType.Tile:
-            RenderSystem.QUADS.Quad(
-              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, -3, 0), Color4.Cyan.ToVector4())).Next(),
-              RenderSystem.QUADS.Put(new(sc + new Vector3(3, -3, 0), Color4.Cyan.ToVector4())).Next(),
-              RenderSystem.QUADS.Put(new(sc + new Vector3(3, 3, 0), Color4.Cyan.ToVector4())).Next(),
-              RenderSystem.QUADS.Put(new(sc + new Vector3(-3, 3, 0), Color4.Cyan.ToVector4())).Next()
-            );
-            if (KeyboardState.IsKeyDown(Keys.Space))
-            {
-              (int, Vector3) lookup = c.Mesh.ClosestVertex(res.Hit);
-              c.Mesh.SetPos(lookup.Item1, lookup.Item2 + (0, 1, 0));
-              c.Mesh.End();
-            }
-            break;
-        }
         RenderSystem.QUADS.Render();
       }
-      
+
       Font.Bind();
       RenderSystem.RenderingRed = true;
       RenderSystem.MESH.Begin();
@@ -316,7 +272,7 @@ namespace New
       Font.Draw(RenderSystem.MESH, $"xyz: {Player.Pos.X:N2}; {Player.Pos.Y:N2}; {Player.Pos.Z:N2}", 11, 78, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"heap: {_memUsage}M", 11, 98, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"rendered {InView} entities of {World.Objs.Count} ({Tris} tris)", 11, 118, PINK0, false);
-      Font.Draw(RenderSystem.MESH, $"dist: {dist:N2}, type: {res.Type}", 11, 138, PINK0, false);
+      Font.Draw(RenderSystem.MESH, $"dist: {HitResult.Distance:N2}, type: {HitResult.Type}", 11, 138, PINK0, false);
 
       RenderSystem.MESH.Render();
       RenderSystem.RenderingRed = false;
@@ -345,7 +301,7 @@ namespace New
     {
       base.OnUpdateFrame(args);
 
-      int i = Ticker.Update();
+      _lastTick = Now;
 
       if (KeyboardState.IsKeyDown(Keys.Escape))
       {
@@ -369,16 +325,17 @@ namespace New
         WindowState = WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
       if (KeyboardState.IsKeyPressed(Keys.F5))
         FirstPerson = !FirstPerson;
+      
+      Ticks++;
 
-      for (int j = 0; j < Math.Min(i, 10); j++)
-      {
-        Ticks++;
+      World.Update();
+      
+      Vector3 eye = Player.Get<FloatPos>(CompType.FloatPos).ToLerpedVec3() + (0, 5, 0);
+      Vector3 dir = Player.Get<Camera>(CompType.Camera).Front;
+      HitResult = World.Raycast(eye, dir);
 
-        World.Update();
-
-        MouseDx = MouseDy = 0;
-        _keysDown.Clear();
-      }
+      MouseDx = MouseDy = 0;
+      _keysDown.Clear();
     }
   }
 }

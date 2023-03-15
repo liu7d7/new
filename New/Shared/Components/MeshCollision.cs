@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 
 namespace New.Shared.Components
 {
-  public abstract class Collision : Entity.Component
+  public abstract class Collision : Component
   {
     protected Collision() : base(CompType.Collision)
     {

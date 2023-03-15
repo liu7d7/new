@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 
 namespace New.Shared.Components
 {
-  public class FloatPos : Entity.Component
+  public class FloatPos : Component
   {
     public float Pitch;
     public float PrevPitch;
@@ -20,11 +20,11 @@ namespace New.Shared.Components
       X = PrevX = Y = PrevY = Z = PrevZ = Yaw = PrevYaw = Pitch = PrevPitch = 0;
     }
 
-    public float LerpedX => Math.Lerp(PrevX, X, Ticker.TickDelta);
-    public float LerpedY => Math.Lerp(PrevY, Y, Ticker.TickDelta);
-    public float LerpedZ => Math.Lerp(PrevZ, Z, Ticker.TickDelta);
-    public float LerpedYaw => Math.Lerp(PrevYaw, Yaw, Ticker.TickDelta);
-    public float LerpedPitch => Math.Lerp(PrevPitch, Pitch, Ticker.TickDelta);
+    public float LerpedX => Math.Lerp(PrevX, X, Fall.TickDelta);
+    public float LerpedY => Math.Lerp(PrevY, Y, Fall.TickDelta);
+    public float LerpedZ => Math.Lerp(PrevZ, Z, Fall.TickDelta);
+    public float LerpedYaw => Math.Lerp(PrevYaw, Yaw, Fall.TickDelta);
+    public float LerpedPitch => Math.Lerp(PrevPitch, Pitch, Fall.TickDelta);
 
     public static FloatPos Get(Entity obj)
     {

@@ -24,7 +24,7 @@ namespace New
       GameWindowSettings gameWindowSettings = new()
       {
         RenderFrequency = 0,
-        UpdateFrequency = 144
+        UpdateFrequency = 20
       };
 
       GLFW.Init();

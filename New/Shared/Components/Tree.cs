@@ -1,6 +1,6 @@
 namespace New.Shared.Components
 {
-  public class Tree : Entity.Component
+  public class Tree : Component
   {
     public Tree() : base(CompType.Tree)
     {

@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 
 namespace New.Shared.Components
 {
-  public class FloatPosStatic : Entity.Component
+  public class FloatPosStatic : Component
   {
     public float X;
     public float Y;

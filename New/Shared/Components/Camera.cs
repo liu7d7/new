@@ -4,7 +4,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace New.Shared.Components
 {
-  public class Camera : Entity.Component
+  public class Camera : Component
   {
     public const float FOV = 45 * MathF.PI / 180f;
     public const float NEAR = 0.1f;

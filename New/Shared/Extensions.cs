@@ -75,6 +75,12 @@ namespace New.Shared
       _green %= 1f;
       return new Color4(_red, _green, _blue, 1f);
     }
+    
+    public static uint ToUint(this Color4 color)
+    {
+      return (uint)(color.A * 255) << 24 | (uint)(color.R * 255) << 16 | (uint)(color.G * 255) << 8 |
+             (uint)(color.B * 255);
+    }
   }
 
   public static class Rand

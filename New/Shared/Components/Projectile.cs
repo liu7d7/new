@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 
 namespace New.Shared.Components
 {
-  public class Projectile : Entity.Component
+  public class Projectile : Component
   {
     private static readonly Model3d _model;
     private readonly Vector3 _dir;
