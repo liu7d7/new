@@ -19,14 +19,13 @@ namespace New.Engine
     public bool Dirty;
     public Vec<(int, int, int)> Tris = new();
 
-    public Mesh(DrawMode drawMode, Shader shader, bool @static)
+    public Mesh(DrawMode drawMode, Shader shader, bool @static, int initialCap = 256)
     {
       _drawMode = drawMode;
       _shader = shader;
-      int stride = VertexTypes.Layouts[typeof(T)].Sum(attrib => (int)attrib * sizeof(float));
-      Vbo = new Vbo<T>(stride * drawMode.Size * sizeof(float), @static);
+      Vbo = new Vbo<T>(initialCap, @static);
       Vbo.Bind();
-      _ibo = new Ibo(drawMode.Size * 128 * sizeof(float), @static);
+      _ibo = new Ibo(initialCap * 6, @static);
       _ibo.Bind();
       _vao = new Vao(VertexTypes.Layouts[typeof(T)]);
       Vbo<T>.Unbind();
@@ -90,6 +89,7 @@ namespace New.Engine
       {
         Vbo.Clear();
         _ibo.Clear();
+        Tris.Clear();
         _tris = 0;
       }
 

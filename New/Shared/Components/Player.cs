@@ -16,6 +16,7 @@ namespace New.Shared.Components
     private readonly Mesh<P> _cape;
 
     private float _leftp, _rightp;
+    private const float _punchAnimLength = 300;
 
     private float HandAnimation(float time, float duration)
     {
@@ -25,7 +26,7 @@ namespace New.Shared.Components
 
     private float Animate(float p)
     {
-      return Fall.Now - p is > 0 and < 400 ? HandAnimation(Fall.Now - p, 400) : 0;
+      return Fall.Now - p is > 0 and < _punchAnimLength ? HandAnimation(Fall.Now - p, _punchAnimLength) : 0;
     }
 
     static Player()
@@ -53,49 +54,50 @@ namespace New.Shared.Components
       _cape.End();
     }
 
-    public override void Update(Entity objIn)
+    public override void Update()
     {
-      base.Update(objIn);
+      base.Update();
 
-      if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Left) && Fall.Now - _rightp > 400 && Fall.Now - _leftp > 400)
+      if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Left) && Fall.Now - _rightp > _punchAnimLength && Fall.Now - _leftp > _punchAnimLength)
       {
         _leftp = Fall.Now;
+        Fall.HitResult.Entity?.TakeDamage(1);
       }
-      else if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Right) && Fall.Now - _rightp > 400 && Fall.Now - _leftp > 400)
+      else if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Right) && Fall.Now - _rightp > _punchAnimLength && Fall.Now - _leftp > _punchAnimLength)
       {
         _rightp = Fall.Now;
+        Fall.HitResult.Entity?.TakeDamage(1);
       }
     }
 
-    public override void Render(Entity objIn)
+    public override void Render()
     {
-      base.Render(objIn);
+      base.Render();
 
       if (Fall.FirstPerson)
       {
-        RenderFirstPerson(objIn);
+        RenderFirstPerson();
       }
       else
       {
-        RenderThirdPerson(objIn);
+        RenderThirdPerson();
       }
     }
     
     private static readonly Vector3 _headOffset = (0f, 4.5f, 0f);
-    private static readonly Vector3 _eyeOffset = (0f, 5f, 0f);
 
-    private void RenderFirstPerson(Entity objIn)
+    private void RenderFirstPerson()
     {
-      Vector3 renderPos = objIn.LerpedPos;
-      float lyaw = objIn.LerpedYaw + 180;
+      Vector3 renderPos = Me.LerpedPos;
+      float lyaw = Me.LerpedYaw + 180;
 
-      RenderHand(objIn, lyaw, _leftp, 1, renderPos, (1.2f, 4.75f, 1.2f), (1.15f, 0f, 1.15f), 0.13f, 22.5f, true);
-      RenderHand(objIn, lyaw, _rightp, -1, renderPos, (1.2f, 4.75f, 1.2f), (1.15f, 0f, 1.15f), 0.13f, 22.5f, true);
+      RenderHand(lyaw, _leftp, 1, renderPos, (1.2f, 4.75f, 1.2f), (1.15f, 0f, 1.15f), 0.13f, 22.5f, true);
+      RenderHand(lyaw, _rightp, -1, renderPos, (1.2f, 4.75f, 1.2f), (1.15f, 0f, 1.15f), 0.13f, 22.5f, true);
     }
 
-    private void RenderThirdPerson(Entity objIn)
+    private void RenderThirdPerson()
     {
-      Vector3 renderPos = objIn.LerpedPos;
+      Vector3 renderPos = Me.LerpedPos;
 
       RenderSystem.Push();
       RenderSystem.Translate(-renderPos - _headOffset);
@@ -104,10 +106,10 @@ namespace New.Shared.Components
       _head.Render(renderPos + _headOffset);
       RenderSystem.Pop();
 
-      float lyaw = objIn.LerpedYaw + 180;
+      float lyaw = Me.LerpedYaw + 180;
 
-      RenderHand(objIn, lyaw, _leftp, 1, renderPos, (1f, 3f, 1f), (1.75f, 0f, 1.75f), 0.33f, 80);
-      RenderHand(objIn, lyaw, _rightp, -1, renderPos, (1f, 3f, 1f), (1.75f, 0f, 1.75f), 0.33f, 80);
+      RenderHand(lyaw, _leftp, 1, renderPos, (1f, 3f, 1f), (1.75f, 0f, 1.75f), 0.33f, 80);
+      RenderHand(lyaw, _rightp, -1, renderPos, (1f, 3f, 1f), (1.75f, 0f, 1.75f), 0.33f, 80);
 
       float yawAdd = (Animate(_leftp) - Animate(_rightp)) * 20;
       lyaw += yawAdd;
@@ -122,9 +124,9 @@ namespace New.Shared.Components
       RenderSystem.Culling = cull;
     }
 
-    private void RenderHand(Entity objIn, float lyaw, float progress, int side, Vector3 renderPos, Vector3 handBaseOffset, Vector3 handFullOffset, float scale, float handBaseOff, bool fp = false)
+    private void RenderHand(float lyaw, float progress, int side, Vector3 renderPos, Vector3 handBaseOffset, Vector3 handFullOffset, float scale, float handBaseOff, bool fp = false)
     {
-      float prog = Fall.Now - progress is > 0 and < 400 ? HandAnimation((float)GLFW.GetTime() * 1000f - progress, 400) : 0;
+      float prog = Fall.Now - progress is > 0 and < _punchAnimLength ? HandAnimation((float)GLFW.GetTime() * 1000f - progress, _punchAnimLength) : 0;
       Vector3 rotation = (MathF.Cos((lyaw + 180 - handBaseOff * side).Rad()), 1f, MathF.Sin((lyaw + 180 - handBaseOff * side).Rad()));
       Vector3 handRotation = (MathF.Cos((lyaw + 180 + 20 * prog * side).Rad()), 1f, MathF.Sin((lyaw + 180 + 20 * prog * side).Rad()));
       Vector3 handRenderPos = renderPos + handBaseOffset * rotation + handFullOffset * prog * handRotation;
@@ -134,9 +136,9 @@ namespace New.Shared.Components
       RenderSystem.Translate(handRenderPos);
       if (fp)
       {
-        Vector3 head = Camera.Get(objIn).Eye();
+        Vector3 head = Camera.Get(Me).Eye();
         RenderSystem.Translate(-head);
-        RenderSystem.Rotate(objIn.LerpedPitch, Camera.Get(objIn).Right);
+        RenderSystem.Rotate(Me.LerpedPitch, Camera.Get(Me).Right);
         RenderSystem.Translate(head);
       }
 

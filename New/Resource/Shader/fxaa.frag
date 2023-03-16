@@ -58,6 +58,5 @@ vec2 rcpFrame)// Constant {1.0/frameWidth, 1.0/frameHeight}.
 }
 
 void main() {
-  //    fragColor = vec4(1);
   fragColor = vec4(FxaaPixelShader(posPos, _tex0, 1.0 / _screenSize), 1.0);
 }

@@ -11,7 +11,7 @@ namespace New.Shared.Tweens
     public FromToTween(Animations.Animation animation, float from, float to, float duration)
     {
       Animation = animation;
-      LastActivation = Environment.TickCount;
+      LastActivation = Fall.Now;
       From = from;
       To = to;
       Duration = duration;
@@ -19,11 +19,11 @@ namespace New.Shared.Tweens
 
     public override float Output()
     {
-      if (Environment.TickCount < LastActivation) return From;
+      if (Fall.Now < LastActivation) return From;
 
-      if (Environment.TickCount > LastActivation + Duration) return To;
+      if (Fall.Now > LastActivation + Duration) return To;
 
-      return MathHelper.Lerp(From, To, Animation(Duration, Environment.TickCount - LastActivation));
+      return MathHelper.Lerp(From, To, Animation(Duration, Fall.Now - LastActivation));
     }
 
     public override float OutputAt(float time)
@@ -37,7 +37,7 @@ namespace New.Shared.Tweens
 
     public override bool Done()
     {
-      return Environment.TickCount - LastActivation > Duration;
+      return Fall.Now - LastActivation > Duration;
     }
   }
 }

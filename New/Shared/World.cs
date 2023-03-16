@@ -9,12 +9,16 @@ namespace New.Shared
   {
     private static readonly Func<Entity, bool> _removed = obj => obj.Removed;
 
-    private static readonly Action<Entity> _ifRemoved = obj => { ArrayPool<Component>.Shared.Return(obj.Components, true); };
+    private static readonly Action<Entity> _ifRemoved = obj =>
+    {
+      ComponentPool.Return(obj.Index);
+    };
 
     private readonly Dictionary<Vector2i, Chunk> _chunks;
-    public readonly Vec<Entity> Objs = new();
+    public readonly Vec<Entity> Objs = new(16384);
+    public readonly Vec<Entity> ObjsToAdd = new(1024);
 
-    private Vector2i _prevCPos;
+    private Vector2i _prevCPos = new Vector2i(1000);
 
     public World()
     {
@@ -27,17 +31,21 @@ namespace New.Shared
       Span<Entity> objs = Objs.Items;
       for (int i = 0; i < Objs.Count; i++)
       {
-        if (!objs[i].Updates || (objs[i].Pos - Fall.Player.Pos).Xz.LengthSquared > 72 * 256)
+        float dx = objs[i].X - Fall.Player.X, dz = objs[i].Z - Fall.Player.Z;
+        float d = dx * dx + dz * dz;
+        if (!objs[i].Updates || d > 18432)
           continue;
         objs[i].Update();
         k++;
       }
-
+            
+      Objs.AddRange(ObjsToAdd);
+      ObjsToAdd.Clear();
       Fall.InView = k;
 
       Objs.RemoveAll(_removed, _ifRemoved);
 
-      Vector2i chunkPos = Fall.Player.Pos.Xz.ToChunkPos();
+      Vector2i chunkPos = Fall.Player.ChunkPos;
       if (_prevCPos == chunkPos)
         return;
 
@@ -55,7 +63,7 @@ namespace New.Shared
 
     public void Render()
     {
-      Vector2i chunkPos = Fall.Player.Pos.Xz.ToChunkPos();
+      Vector2i chunkPos = Fall.Player.ChunkPos;
       float lyaw = Fall.Player.LerpedYaw;
       for (int i = -8; i <= 8; i++)
       for (int j = -8; j <= 8; j++)
@@ -63,19 +71,19 @@ namespace New.Shared
         int d = i * i + j * j;
         if (d > 81)
           continue;
-        if (MathF.Abs(Math.WrapDegrees(Math.CalcAngle(j, i) - lyaw)) > 70 && d > 9)
+        if (MathF.Abs(Math.WrapDegrees(Math.CalcAngle(j, i) - lyaw)) > 75 && d > 9)
           continue;
-        _chunks[(i + chunkPos.X, j + chunkPos.Y)].Mesh.Render();
+        _chunks[(chunkPos.X + i, chunkPos.Y + j)].Mesh.Render();
       }
 
       Span<Entity> objs = Objs.Items;
       for (int i = 0; i < Objs.Count; i++)
       {
-        float d = (objs[i].Pos - Fall.Player.Pos).Xz.LengthSquared;
-        if (d > 72 * 256)
+        float dx = objs[i].X - Fall.Player.X, dz = objs[i].Z - Fall.Player.Z;
+        float d = dx * dx + dz * dz;
+        if (d > 18432 || (MathF.Abs(Math.WrapDegrees(Math.CalcAngleXz(Fall.Player, objs[i]) - lyaw)) > 65 && d > 864))
           continue;
-        if (MathF.Abs(Math.WrapDegrees(Math.CalcAngleXz(Fall.Player, objs[i]) - lyaw)) > 65 && d > 864)
-          continue;
+
         objs[i].Render();
       }
     }
@@ -83,11 +91,6 @@ namespace New.Shared
     public static float HeightAt(Vector2 vec)
     {
       return Chunk.HeightAt(vec);
-    }
-    
-    public Chunk ChunkAt(Vector3 pos)
-    {
-      return _chunks[pos.Xz.ToChunkPos()];
     }
 
     public const float REACH = 24f;
@@ -116,11 +119,11 @@ namespace New.Shared
       }
 
       Chunk chunk = null;
-      Vector2i chunkPos = eye.Xz.ToChunkPos();
+      Vector2i chunkPos = eye.ToChunkPos();
       for (int i = -1; i <= 1; i++)
       for (int j = -1; j <= 1; j++)
       {
-        Chunk c = _chunks[(i + chunkPos.X, j + chunkPos.Y)];
+        if (!_chunks.TryGetValue((i + chunkPos.X, j + chunkPos.Y), out Chunk c)) continue;
         if (!c.Collision.RayCollides(Vector3.Zero, eye, dir, out float d))
           continue;
         
@@ -138,11 +141,9 @@ namespace New.Shared
           return new HitResult(HitResultType.Entity, dist, b.X, b.Y, b.Z, entity: obj);
         case HitResultType.Tile:
           return new HitResult(HitResultType.Tile, dist, b.X, b.Y, b.Z, chunk: chunk);
-        case HitResultType.None:
-          break;
+        default:
+          return new HitResult();
       }
-      
-      return new HitResult();
     }
   }
 
@@ -151,12 +152,13 @@ namespace New.Shared
     public readonly Mesh<P> Mesh;
     public readonly MeshCollision<P> Collision;
     private const int _quality = 4, _quality1 = _quality + 1, _tileSize = 16 / _quality;
-    private const int _size = 16;
+    public const int SHIFT = 4;
+    public static readonly int SIZE = (int)MathF.Pow(2, SHIFT);
     private const float _div = 24f;
 
     public Chunk(Vector2i chunkPos)
     {
-      Mesh = new Mesh<P>(DrawMode.TRIANGLE, RenderSystem.BASIC, true);
+      Mesh = new Mesh<P>(DrawMode.TRIANGLE, RenderSystem.BASIC, true, _quality * _quality);
       Collision = new MeshCollision<P>(Mesh);
 
       Span<int> memo = stackalloc int[_quality1 * _quality1];
@@ -167,7 +169,7 @@ namespace New.Shared
       for (int j = 0; j < _quality; j++)
       {
         int i1, i2, i3, i4;
-        int ti = i * _tileSize + chunkPos.X * _size, tj = j * _tileSize + chunkPos.Y * _size;
+        int ti = i * _tileSize + chunkPos.X * SIZE, tj = j * _tileSize + chunkPos.Y * SIZE;
         if ((i1 = memo[i * _quality1 + j]) == -1)
           i1 = memo[i * _quality1 + j] =
             Mesh.Put(new(ti, Noise(ti, tj), tj)).Next();
@@ -196,15 +198,15 @@ namespace New.Shared
 
     public static float HeightAt(Vector2 vec)
     {
-      int x1 = (int)(vec.X - vec.X % _tileSize);
-      int y1 = (int)(vec.Y - vec.Y % _tileSize);
+      int x1 = (int)MathF.Floor(vec.X);
+      int y1 = (int)MathF.Floor(vec.Y);
 
       float v00 = Noise(x1, y1);
-      float v10 = Noise(x1 + _tileSize, y1);
-      float v01 = Noise(x1, y1 + _tileSize);
-      float v11 = Noise(x1 + _tileSize, y1 + _tileSize);
-      float x = (vec.X - x1) / _tileSize;
-      float y = (vec.Y - y1) / _tileSize;
+      float v10 = Noise(x1 + 1, y1);
+      float v01 = Noise(x1, y1 + 1);
+      float v11 = Noise(x1 + 1, y1 + 1);
+      float x = vec.X - x1;
+      float y = vec.Y - y1;
 
       // bilinear interpolation
       return (1 - x) * (1 - y) * v00 + x * (1 - y) * v10 + (1 - x) * y * v01 + x * y * v11;

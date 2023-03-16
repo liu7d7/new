@@ -29,7 +29,6 @@ namespace New.Engine
 
     public static readonly Mesh<PCT> MESH = new(DrawMode.TRIANGLE, _john, false);
     public static readonly Mesh<PC> QUADS = new(DrawMode.TRIANGLE, _quads, false);
-
     public static readonly Mesh<PWC> LINE = new(DrawMode.LINE, _lines, false);
 
     private static readonly Mesh<P> _post = new(DrawMode.TRIANGLE, null, false);
@@ -80,6 +79,11 @@ namespace New.Engine
     {
       Model.Translate(vec);
     }
+    
+    public static void Translate(float x, float y, float z)
+    {
+      Model.Translate(x, y, z);
+    }
 
     public static void Rotate(float angle, float x, float y, float z)
     {
@@ -117,7 +121,7 @@ namespace New.Engine
       shader.SetVector3("lightPos", (_camera.X + 5, _camera.Y + 12, _camera.Z + 5));
       shader.SetMatrix4("_proj", _proj);
       shader.SetMatrix4("_look", _look);
-      shader.SetFloat("_time", Environment.TickCount / 1000f % (MathF.PI * 2f));
+      shader.SetFloat("_time", Fall.Now / 1000f % (MathF.PI * 2f));
       shader.SetVector2("_radius", (2, 2));
     }
 

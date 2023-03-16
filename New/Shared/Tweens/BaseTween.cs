@@ -4,7 +4,7 @@ namespace New.Shared.Tweens
   {
     public float Duration;
     public bool Infinite = false;
-    public float LastActivation = Environment.TickCount;
+    public float LastActivation = Fall.Now;
 
     public abstract float Output();
     public abstract float OutputAt(float time);

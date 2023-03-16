@@ -20,7 +20,7 @@ namespace New.Shared.Tweens
       if (!_list[_idx].Done()) return _lastOut = _list[_idx].Output();
       if (_idx == _list.Length - 1) return _lastOut;
       _idx++;
-      _list[_idx].LastActivation = Environment.TickCount;
+      _list[_idx].LastActivation = Fall.Now;
       return _lastOut = _list[_idx].Output();
     }
 

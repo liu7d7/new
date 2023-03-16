@@ -8,7 +8,7 @@ namespace New.Shared.Tweens
 
     public Tween(Animations.Animation animation, float duration, bool repeating)
     {
-      LastActivation = Environment.TickCount;
+      LastActivation = Fall.Now;
       _animation = animation;
       Infinite = repeating;
       Duration = duration;
@@ -18,8 +18,8 @@ namespace New.Shared.Tweens
     {
       return MathHelper.Clamp(
         Infinite
-          ? _animation(Duration, (Environment.TickCount - LastActivation) % Duration)
-          : _animation(Duration, Environment.TickCount - LastActivation), 0, 1);
+          ? _animation(Duration, (Fall.Now - LastActivation) % Duration)
+          : _animation(Duration, Fall.Now - LastActivation), 0, 1);
     }
 
     public override float OutputAt(float time)
@@ -36,7 +36,7 @@ namespace New.Shared.Tweens
 
     public override bool Done()
     {
-      return Environment.TickCount - LastActivation > Duration;
+      return Fall.Now - LastActivation > Duration;
     }
   }
 }

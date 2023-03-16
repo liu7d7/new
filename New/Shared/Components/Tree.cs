@@ -6,9 +6,9 @@ namespace New.Shared.Components
     {
     }
 
-    public override void Update(Entity objIn)
+    public override void Update()
     {
-      base.Update(objIn);
+      base.Update();
 
       if (Fall.InView > Snow.MODEL_COUNT * 400) return;
 
@@ -17,10 +17,11 @@ namespace New.Shared.Components
         Updates = true
       };
       obj.Add(new Snow());
-      obj.X = objIn.Pos.X;
-      obj.Y = objIn.Pos.Y + 16 + Rand.NextFloat(0, 12);
-      obj.Z = objIn.Pos.Z;
-      Fall.World.Objs.Add(obj);
+      obj.X = Me.X;
+      obj.Y = Me.Y + 16 + Rand.NextFloat(0, 12);
+      obj.Z = Me.Z;
+      obj.SetPrev();
+      Fall.World.ObjsToAdd.Add(obj);
     }
   }
 }

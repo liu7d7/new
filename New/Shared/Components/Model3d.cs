@@ -118,6 +118,11 @@ namespace New.Shared.Components
     {
       _models.Add(Matrix4.CreateTranslation(pos) * RenderSystem.Model);
     }
+    
+    public void Render(float x, float y, float z)
+    {
+      _models.Add(Matrix4.CreateTranslation(x, y, z) * RenderSystem.Model); 
+    }
 
     public static void Draw()
     {
@@ -160,15 +165,15 @@ namespace New.Shared.Components
         _rotation = rot;
       }
 
-      public override void Render(Entity objIn)
+      public override void Render()
       {
-        base.Render(objIn);
+        base.Render();
 
         RenderSystem.Push();
-        RenderSystem.Translate(-objIn.LerpedPos);
+        RenderSystem.Translate(-Me.LerpedX, -Me.LerpedY, -Me.LerpedZ);
         RenderSystem.Rotate(_rotation, 0, 1, 0);
-        RenderSystem.Translate(objIn.LerpedPos);
-        Model.Render(objIn.LerpedPos);
+        RenderSystem.Translate(Me.LerpedX, Me.LerpedY, Me.LerpedZ);
+        Model.Render(Me.LerpedX, Me.LerpedY, Me.LerpedZ);
         RenderSystem.Pop();
       }
     }

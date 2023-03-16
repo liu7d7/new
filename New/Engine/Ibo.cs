@@ -13,7 +13,7 @@ namespace New.Engine
     public Ibo(int initialCapacity, bool @static)
     {
       _handle = GL.GenBuffer();
-      _indices = ArrayPool<int>.Shared.Rent(initialCapacity);
+      _indices = new int[initialCapacity];
       _static = @static;
     }
 
@@ -31,9 +31,8 @@ namespace New.Engine
     {
       if (_count + 1 > _indices.Length)
       {
-        ArrayPool<int>.Shared.Return(_indices);
         int[] prev = _indices;
-        _indices = ArrayPool<int>.Shared.Rent(_indices.Length * 2);
+        _indices = new int[(int)(_indices.Length * 1.33)];
         Array.Copy(prev, _indices, _count);
       }
 

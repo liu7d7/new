@@ -22,7 +22,7 @@ namespace New.Shared.Tweens
 
     public override bool Done()
     {
-      return Environment.TickCount - LastActivation > Duration;
+      return Fall.Now - LastActivation > Duration;
     }
   }
 }

@@ -11,7 +11,7 @@ namespace New.Engine
     private readonly int _handle;
     private readonly bool _static;
     private int _count;
-    private int _size = Marshal.SizeOf<T>();
+    private static readonly int _size = Marshal.SizeOf<T>();
 
     public Vbo(int initialCapacity, bool @static)
     {
@@ -36,7 +36,7 @@ namespace New.Engine
       {
         ArrayPool<T>.Shared.Return(Vertices);
         T[] prev = Vertices;
-        Vertices = ArrayPool<T>.Shared.Rent(Vertices.Length * 2);
+        Vertices = ArrayPool<T>.Shared.Rent((int)(Vertices.Length * 1.33));
         Array.Copy(prev, Vertices, _count);
       }
 
@@ -47,8 +47,7 @@ namespace New.Engine
     public void Upload(bool unbindAfter = true)
     {
       Bind();
-      GL.BufferData(BufferTarget.ArrayBuffer, _count * _size, Vertices,
-        _static ? BufferUsageHint.StaticDraw : BufferUsageHint.DynamicDraw);
+      GL.BufferData(BufferTarget.ArrayBuffer, _count * _size, Vertices, _static ? BufferUsageHint.StaticDraw : BufferUsageHint.DynamicDraw);
       if (unbindAfter) Unbind();
     }
 

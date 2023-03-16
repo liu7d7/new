@@ -9,8 +9,6 @@ uniform float _width;
 uniform float _threshold;
 uniform float _depthThreshold;
 uniform vec4 _outlineColor;
-uniform vec4 _depthOutlineColor;
-uniform int _diffDepthCol;
 uniform int _blackAndWhite;
 uniform int _abs;
 uniform int _glow;
@@ -31,20 +29,22 @@ const float sqrt2 = 1.0 / sqrt(2.);
 float diag = _width * sqrt2;
 vec2 oneTexel = 1. / _screenSize;
 
-int shouldOutline(vec2 pos, vec4 center, float depth) {
-  vec2 corners[8] = {
-  (pos.xy - diag) * oneTexel,
-  vec2(pos.x + diag, pos.y - diag) * oneTexel,
-  vec2(pos.x - diag, pos.y + diag) * oneTexel,
-  (pos.xy + diag) * oneTexel,
-  vec2(pos.x - _width, pos.y) * oneTexel,
-  vec2(pos.x + _width, pos.y) * oneTexel,
-  vec2(pos.x, pos.y - _width) * oneTexel,
-  vec2(pos.x, pos.y + _width) * oneTexel
-  };
+const vec2 corners[8] = {
+  vec2(-diag, -diag),
+  vec2(diag, -diag),
+  vec2(-diag, diag),
+  vec2(diag, diag),
+  vec2(-_width, 0),
+  vec2(_width, 0),
+  vec2(0, -_width),
+  vec2(0, _width)
+};
+
+bool shouldOutline(vec2 pos, vec4 center, float depth) {
   float diff;
   for (int i = 0; i < 8; i++) {
-    vec4 col = texture(_tex0, corners[i]);
+    vec2 corner = (corners[i] + pos) * oneTexel;
+    vec4 col = texture(_tex0, corner);
     if (_abs == 0) {
       diff = -(center.r - col.r)
       -(center.g - col.g)
@@ -54,32 +54,26 @@ int shouldOutline(vec2 pos, vec4 center, float depth) {
       + abs(center.g - col.g)
       + abs(center.b - col.b);
     }
-    if (diff > _threshold) {
-      return 2;
-    }
-    if (abs(depth - depthAt(corners[i])) > _depthThreshold) {
-      return 1;
+    
+    if (diff > _threshold || abs(depth - depthAt(corner)) > _depthThreshold) {
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
 void main() {
   vec4 center = texture(_tex0, v_TexCoords);
-  int o = shouldOutline(v_Pos, center, depthAt(v_TexCoords));
+  bool o = shouldOutline(v_Pos, center, depthAt(v_TexCoords));
   if (_blackAndWhite == 1) {
-    if (o == 2 || (_diffDepthCol == 0 && o == 1)) {
+    if (o) {
       fragColor = _outlineColor;
-    } else if (o == 1) {
-      fragColor = _depthOutlineColor;
     } else {
       fragColor = _otherColor;
     }
   } else {
-    if (o == 2 || (_diffDepthCol == 0 && o == 1)) {
+    if (o) {
       fragColor = _outlineColor;
-    } else if (o == 1) {
-      fragColor = _depthOutlineColor;
     } else {
       fragColor = center;
     }

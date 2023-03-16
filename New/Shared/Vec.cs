@@ -54,6 +54,13 @@ namespace New.Shared
       }
     }
 
+    public T AddRet(T item)
+    {
+      if (Count == Items.Length)
+        EnsureCapacity(Count + 1);
+      return Items[Count++] = item;
+    }
+    
     public void Add(T item)
     {
       if (Count == Items.Length)
@@ -139,7 +146,7 @@ namespace New.Shared
       return new Enumerator(this);
     }
 
-    public int Count { get; private set; }
+    public int Count { get; set; }
 
     public T this[int index]
     {
@@ -163,7 +170,9 @@ namespace New.Shared
     public void Clear(bool fastClear)
     {
       if (!fastClear && Count > 0)
+      {
         Array.Clear(Items, 0, Count);
+      }
       Count = 0;
     }
 
@@ -207,13 +216,14 @@ namespace New.Shared
       Array.Copy(Items, index, array, arrayIndex, count);
     }
 
-    private void EnsureCapacity(int min)
+    public bool EnsureCapacity(int min, double loadFactor = 2)
     {
-      if (Items.Length >= min) return;
-      int num = Items.Length == 0 ? _defaultCapacity : Items.Length * 2;
+      if (Items.Length >= min) return false;
+      int num = Items.Length == 0 ? _defaultCapacity : (int)(Items.Length * loadFactor);
       if (num < min)
         num = min;
       Capacity = num;
+      return true;
     }
 
     public void ForEach(Action<T> action)
@@ -281,7 +291,7 @@ namespace New.Shared
 
       internal Enumerator(Vec<T> vec)
       {
-        this._vec = vec;
+        _vec = vec;
         index = 0;
         Current = default;
       }

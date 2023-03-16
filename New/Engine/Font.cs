@@ -14,7 +14,6 @@ namespace New.Engine
     public static int Height;
     public static Image2d Image2d;
 
-    // I have absolutely no idea how to use unsafe :((
     static unsafe Font()
     {
       byte[] buffer = File.ReadAllBytes("Resource/Font/Dank Mono Italic.otf");
@@ -61,7 +60,7 @@ namespace New.Engine
       Image2d.Unbind();
     }
 
-    public static void Draw(Mesh<PCT> mesh, string text, float x, float y, uint color, bool shadow, float scale = 1.0f)
+    public static void Draw(Mesh<PCT> mesh, ReadOnlySpan<char> text, float x, float y, uint color, bool shadow, float scale = 1.0f)
     {
       int length = text.Length;
       float drawX = x;
@@ -70,7 +69,6 @@ namespace New.Engine
       float r = ((color >> 16) & 0xFF) / 255.0f;
       float g = ((color >> 8) & 0xFF) / 255.0f;
       float b = (color & 0xFF) / 255.0f;
-      string lower = text.ToLower();
       for (int i = 0; i < length; i++)
       {
         char charCode = text[i];
@@ -79,7 +77,7 @@ namespace New.Engine
 
         if (charCode == '\u00a7' && i < length - 1)
         {
-          char next = lower[i + 1];
+          char next = char.ToLowerInvariant(text[i + 1]);
           if (FontFormat.VALUES.TryGetValue(next, out FontFormat fmt))
           {
             uint newColor = fmt.Color;

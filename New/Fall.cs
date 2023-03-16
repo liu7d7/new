@@ -17,27 +17,25 @@ namespace New
     public static Fall Instance;
     public static Entity Player;
     public static World World;
-    public static float MouseDx, MouseDy, MouseX, MouseY;
+    public static float MouseX, MouseY;
     public static uint Ticks;
     public static uint Frames;
     public static int InView;
     public static int Tris;
     public static bool FirstPerson;
-    public static HitResult HitResult = new HitResult();
+    public static HitResult HitResult;
 
     private static readonly DebugProc _debugProcCallback = DebugCallback;
-    private static readonly Keys[] _keys = (Keys[])Enum.GetValues(typeof(Keys));
-    private static readonly HashSet<Keys> _keysDown = new();
     private static GCHandle _debugProcCallbackHandle;
     private static float _lastTick;
     private readonly Color4 _backgroundColor = Colors.NextColor();
     private readonly RollingAvg _mspf = new(120);
-    private int _lastInquiry;
+    private float _lastInquiry;
     private int _memUsage;
     private bool _outline = true;
 
-    public static float Now => (float)GLFW.GetTime() * 1000f;
-    public static float TickDelta => (Now - _lastTick) / 50f;
+    public static float Now;
+    public static float TickDelta;
 
     public Fall(GameWindowSettings windowSettings, NativeWindowSettings nativeWindowSettings) : base(windowSettings,
       nativeWindowSettings)
@@ -147,6 +145,8 @@ namespace New
         Player.Yaw = Player.PrevYaw = 180;
         Player.X = Player.PrevX = Player.Z = Player.PrevZ = -1;
         Player.Y = Player.PrevY = 25;
+        Camera c = Player.Get<Camera>(CompType.Camera);
+        c.UpdateCameraVectors(Player);
         Player.Update();
       }
 
@@ -167,9 +167,7 @@ namespace New
       VSync = VSyncMode.Off;
       GL.DepthFunc(DepthFunction.Lequal);
       GlStateManager.EnableBlend();
-
-      Ticker.Init();
-
+      
       CursorState = CursorState.Grabbed;
     }
 
@@ -190,7 +188,11 @@ namespace New
     {
       base.OnRenderFrame(args);
 
-      Camera.Get(Player).UpdateCameraVectors(Player);
+      Now = (float)GLFW.GetTime() * 1000f;
+      TickDelta = (Now - _lastTick) / 50f;
+
+      Camera c = Player.Get<Camera>(CompType.Camera);
+      c.UpdateCameraVectors(Player);
 
       Fbo.Unbind();
       GL.ClearColor(_backgroundColor);
@@ -252,18 +254,19 @@ namespace New
         _mspf.Add(args.Time);
       }
 
-      if (Environment.TickCount - _lastInquiry > 1000)
+      if (Fall.Now - _lastInquiry > 1000)
       {
-        _lastInquiry = Environment.TickCount;
+        _lastInquiry = Fall.Now;
         _memUsage = (int)(GC.GetTotalMemory(false) / (1024 * 1024));
       }
 
-      Font.Draw(RenderSystem.MESH, $"mspf: {_mspf.Average:N4} | fps: {1f / _mspf.Average:N2}", 11, 38, PINK0, false);
-      Font.Draw(RenderSystem.MESH, $"time: {Environment.TickCount / 1000f % (MathF.PI * 2f):N2}", 11, 58, PINK0, false);
-      Font.Draw(RenderSystem.MESH, $"xyz: {Player.Pos.X:N2}; {Player.Pos.Y:N2}; {Player.Pos.Z:N2}", 11, 78, PINK0, false);
+      Font.Draw(RenderSystem.MESH, $"mspf: {_mspf.Average * 1000:N4} | fps: {1f / _mspf.Average:N2}", 11, 38, PINK0, false);
+      Font.Draw(RenderSystem.MESH, $"time: {Fall.Now / 1000f % (MathF.PI * 2f):N2}", 11, 58, PINK0, false);
+      Font.Draw(RenderSystem.MESH, $"xyz: {Player.X:N2}; {Player.Y:N2}; {Player.Z:N2}", 11, 78, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"heap: {_memUsage}M", 11, 98, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"rendered {InView} entities of {World.Objs.Count} ({Tris} tris)", 11, 118, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"dist: {HitResult.Distance:N2}, type: {HitResult.Type}", 11, 138, PINK0, false);
+      Font.Draw(RenderSystem.MESH, $"pool efficiency: {(float)World.Objs.Count / ComponentPool.TheoreticalCount:N6}", 11, 158, PINK0, false);
 
       RenderSystem.MESH.Render();
       RenderSystem.RenderingRed = false;
@@ -277,15 +280,8 @@ namespace New
 
     protected override void OnMouseMove(MouseMoveEventArgs e)
     {
-      MouseDx += e.DeltaX;
-      MouseDy += e.DeltaY;
       MouseX = e.X;
       MouseY = e.Y;
-    }
-
-    public static bool IsPressed(Keys k)
-    {
-      return _keysDown.Contains(k);
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
@@ -298,12 +294,6 @@ namespace New
       {
         Camera.Get(Player).FirstMouse = true;
         CursorState = CursorState.Normal;
-      }
-
-      foreach (Keys k in _keys)
-      {
-        if (k == Keys.Unknown) continue;
-        if (KeyboardState.IsKeyPressed(k)) _keysDown.Add(k);
       }
 
       if (MouseState.WasButtonDown(MouseButton.Left)) CursorState = CursorState.Grabbed;
@@ -319,12 +309,9 @@ namespace New
 
       World.Update();
       
-      Vector3 eye = Player.LerpedPos + (0, 5, 0);
+      Vector3 eye = (Player.LerpedX, Player.LerpedY + 5, Player.LerpedZ);
       Vector3 dir = Player.Get<Camera>(CompType.Camera).Front;
       HitResult = World.Raycast(eye, dir);
-
-      MouseDx = MouseDy = 0;
-      _keysDown.Clear();
     }
   }
 }

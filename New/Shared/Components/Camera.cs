@@ -11,7 +11,6 @@ namespace New.Shared.Components
     private readonly Vector3 _up;
     private float _lastX;
     private float _lastY;
-    private Entity _me;
     public Vector3 Right;
 
     private Vector3 _velocity;
@@ -42,13 +41,11 @@ namespace New.Shared.Components
       Right = Vector3.Cross(Front, _up).Normalized();
     }
 
-    public override void Update(Entity objIn)
+    public override void Update()
     {
-      base.Update(objIn);
+      base.Update();
       
-      _me = objIn;
-      
-      _me.SetPrev();
+      Me.SetPrev();
 
       OnMouseMove();
 
@@ -59,7 +56,7 @@ namespace New.Shared.Components
       if (kb.IsKeyDown(Keys.S)) forwards--;
       if (kb.IsKeyDown(Keys.A)) rightwards--;
       if (kb.IsKeyDown(Keys.D)) rightwards++;
-      Vector3 current = _me.ToVec3();
+      Vector3 current = Me.ToVec3();
       Vector3 twoD = Front * (1, 0, 1);
       if (twoD != Vector3.Zero)
         twoD.Normalize();
@@ -67,7 +64,7 @@ namespace New.Shared.Components
       _velocity += Right * rightwards;
       _velocity.Y -= 0.2f;
       current += _velocity;
-      float height = World.HeightAt((_me.X, _me.Z));
+      float height = World.HeightAt((Me.X, Me.Z));
       if (current.Y < height)
       {
         current.Y = height;
@@ -75,7 +72,7 @@ namespace New.Shared.Components
       }
 
       _velocity.Xz *= 0.5f;
-      _me.SetVec3(current);
+      Me.SetVec3(current);
     }
 
     private void OnMouseMove()
@@ -101,20 +98,20 @@ namespace New.Shared.Components
       xOffset *= SENSITIVITY;
       yOffset *= SENSITIVITY;
 
-      _me.Yaw += xOffset;
-      _me.Pitch += yOffset;
+      Me.Yaw += xOffset;
+      Me.Pitch += yOffset;
 
-      if (_me.Pitch > 89.0f)
-        _me.Pitch = 89.0f;
-      if (_me.Pitch < -89.0f)
-        _me.Pitch = -89.0f;
+      if (Me.Pitch > 89.0f)
+        Me.Pitch = 89.0f;
+      if (Me.Pitch < -89.0f)
+        Me.Pitch = -89.0f;
     }
 
     public Vector3 Eye()
     {
       if (Fall.FirstPerson)
       {
-        return _me.ToLerpedVec3() + (0, 5, 0);
+        return Me.ToLerpedVec3() + (0, 5, 0);
       }
 
       Vector3 ret = Target() - Front * 25f;
@@ -130,15 +127,15 @@ namespace New.Shared.Components
       }
       else
       {
-        return _me.ToLerpedVec3() + (0, 4, 0);
+        return Me.ToLerpedVec3() + (0, 4, 0);
       }
     }
 
     public Matrix4 GetCameraMatrix()
     {
-      if (_me == null)
+      if (Me == null)
         return Matrix4.Identity;
-      UpdateCameraVectors(_me);
+      UpdateCameraVectors(Me);
       if (Fall.FirstPerson)
       {
         Vector3 eye = Eye();

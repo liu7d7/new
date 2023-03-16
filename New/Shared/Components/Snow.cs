@@ -36,38 +36,38 @@ namespace New.Shared.Components
       _modelIndex = _modelIndexCount % MODEL_COUNT;
     }
 
-    public override void Render(Entity objIn)
+    public override void Render()
     {
-      base.Render(objIn);
+      base.Render();
 
       RenderSystem.Push();
-      RenderSystem.Translate(-objIn.LerpedPos);
-      RenderSystem.Rotate(Environment.TickCount / 2f % 360 * _mul, 0.5f, 1, 0.5f);
-      RenderSystem.Scale(MathHelper.Clamp(1 - (Environment.TickCount - _landing) / 1000f, 0, 1));
-      RenderSystem.Translate(objIn.LerpedPos);
-      _snow[_modelIndex].Render(objIn.LerpedPos);
+      RenderSystem.Translate(-Me.LerpedX, -Me.LerpedY, -Me.LerpedZ);
+      RenderSystem.Rotate(Fall.Now / 2f % 360 * _mul, 0.5f, 1, 0.5f);
+      RenderSystem.Scale(MathHelper.Clamp(1 - (Fall.Now - _landing) / 1000f, 0, 1));
+      RenderSystem.Translate(Me.LerpedX, Me.LerpedY, Me.LerpedZ);
+      _snow[_modelIndex].Render(Me.LerpedX, Me.LerpedY, Me.LerpedZ);
       RenderSystem.Pop();
     }
 
-    public override void Update(Entity objIn)
+    public override void Update()
     {
-      base.Update(objIn);
+      base.Update();
       
-      objIn.SetPrev();
+      Me.SetPrev();
 
-      if (objIn.Y > World.HeightAt((objIn.X, objIn.Z)) - 0.5f)
+      if (Me.Y > World.HeightAt((Me.X, Me.Z)) - 0.5f)
       {
-        float x = ((Environment.TickCount + _offset) / 3f % 360f).Rad();
-        objIn.X += _dir.X * (MathF.Sin(x * 0.5f) / 4f + 1.5f);
-        objIn.Y += _dir.Y * (MathF.Sin(x * 1.6f) * MathF.Sin(x * 1.3f) * MathF.Sin(x * 0.7f)) - 0.1f;
-        objIn.Z += _dir.Z * (MathF.Cos(x * 0.5f) / 4f + 1.5f);
+        float x = ((Fall.Now + _offset) / 3f % 360f).Rad();
+        Me.X += _dir.X * (MathF.Sin(x * 0.5f) / 4f + 1.5f);
+        Me.Y += _dir.Y * (MathF.Sin(x * 1.6f) * MathF.Sin(x * 1.3f) * MathF.Sin(x * 0.7f)) - 0.1f;
+        Me.Z += _dir.Z * (MathF.Cos(x * 0.5f) / 4f + 1.5f);
       }
-      else if (System.Math.Abs(_landing - float.MaxValue) < 0.3f)
+      else if (MathF.Abs(_landing - float.MaxValue) < 0.3f)
       {
-        _landing = Environment.TickCount;
+        _landing = Fall.Now;
       }
 
-      if (Environment.TickCount - _landing > 1000) objIn.Removed = true;
+      if (Fall.Now - _landing > 1000) Me.Removed = true;
     }
   }
 }

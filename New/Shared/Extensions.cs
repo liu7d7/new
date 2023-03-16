@@ -176,15 +176,18 @@ namespace New.Shared
       return Task.WhenAll(Partitioner.Create(Enumerable.Range(list.Start.Value, list.End.Value)).GetPartitions(batches)
         .AsParallel().Select(partition));
     }
+    
+    private const float _toRad = 1f / 180f * MathF.PI;
+    private const float _toDeg = 1f / MathF.PI * 180f;
 
     public static float Rad(this float degrees)
     {
-      return (float)(degrees * System.Math.PI / 180.0);
+      return degrees * _toRad;
     }
 
     public static float Deg(this float radians)
     {
-      return (float)(radians * 180 / System.Math.PI);
+      return radians * _toDeg;
     }
 
     public static void Scale(this ref Matrix4 matrix4, float scalar)
@@ -196,6 +199,11 @@ namespace New.Shared
     {
       matrix4 *= Matrix4.CreateTranslation(translation);
     }
+    
+    public static void Translate(this ref Matrix4 matrix4, float x, float y, float z)
+    {
+      matrix4 *= Matrix4.CreateTranslation(x, y, z);
+    }
 
     public static void Rotate(this ref Matrix4 matrix4, float angle, float x, float y, float z)
     {
@@ -205,6 +213,11 @@ namespace New.Shared
     public static Vector2i ToChunkPos(this Vector2 vec)
     {
       return ((int)vec.X >> 4, (int)vec.Y >> 4);
+    }
+    
+    public static Vector2i ToChunkPos(this Vector3 vec)
+    {
+      return ((int)vec.X >> 4, (int)vec.Z >> 4);
     }
   }
 }

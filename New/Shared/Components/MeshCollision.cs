@@ -26,9 +26,12 @@ namespace New.Shared.Components
     {
       Span<(int, int, int)> tris = _mesh.Tris.Items;
       Span<T> verts = _mesh.Vbo.Vertices;
+      ro.X -= offset.X;
+      ro.Y -= offset.Y;
+      ro.Z -= offset.Z;
       for (int i = 0; i < tris.Length; i++)
       {
-        Vector3 v0 = verts[tris[i].Item1].Pos + offset, v1 = verts[tris[i].Item2].Pos + offset, v2 = verts[tris[i].Item3].Pos + offset;
+        Vector3 v0 = verts[tris[i].Item1].Pos, v1 = verts[tris[i].Item2].Pos, v2 = verts[tris[i].Item3].Pos;
         
         Vector3 e1 = v1 - v0;
         Vector3 e2 = v2 - v0;
