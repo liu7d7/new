@@ -1,4 +1,5 @@
 using New.Engine;
+using New.Shared.Worlds.World;
 using OpenTK.Mathematics;
 
 namespace New.Shared.Components
@@ -25,7 +26,8 @@ namespace New.Shared.Components
       _snow = new Model3d[MODEL_COUNT];
       for (int i = 0; i < MODEL_COUNT; i++)
       {
-        _snow[i] = Model3d.Read("snow", new Dictionary<string, uint> { { "hi", (uint)i } });
+        _snow[i] = Model3d.Read("snow", new Dictionary<string, uint>
+          { { "hi", (uint)i } });
         _snow[i].Scale(0.5f);
       }
     }
@@ -52,7 +54,7 @@ namespace New.Shared.Components
     public override void Update()
     {
       base.Update();
-      
+
       Me.SetPrev();
 
       if (Me.Y > World.HeightAt((Me.X, Me.Z)) - 0.5f)

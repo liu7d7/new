@@ -1,3 +1,4 @@
+using New.Shared.Worlds.World;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -44,7 +45,7 @@ namespace New.Shared.Components
     public override void Update()
     {
       base.Update();
-      
+
       Me.SetPrev();
 
       OnMouseMove();
@@ -118,7 +119,7 @@ namespace New.Shared.Components
       ret.Y = MathF.Max(ret.Y, World.HeightAt((ret.X, ret.Z)) + 0.33f);
       return ret;
     }
-    
+
     public Vector3 Target()
     {
       if (Fall.FirstPerson)

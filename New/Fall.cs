@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using New.Engine;
 using New.Shared;
 using New.Shared.Components;
+using New.Shared.Worlds.World;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -33,6 +34,7 @@ namespace New
     private float _lastInquiry;
     private int _memUsage;
     private bool _outline = true;
+    private bool _vsync;
 
     public static float Now;
     public static float TickDelta;
@@ -82,14 +84,13 @@ namespace New
         for (int j = -100; j <= 100; j++)
         {
           Entity obj = new()
-          {
-            Updates = true
-          };
-          Model3d.Component comp = new(models[Rand.Next(0, 5)], 0);
+            { Updates = true };
           obj.X = i * 50 + Rand.NextFloat(-12.5f, 12.5f);
           obj.Z = j * 50 + Rand.NextFloat(-12.5f, 12.5f);
+          if (World.HeightAt(obj.X, obj.Z) < 0) continue;
           obj.Y = World.HeightAt((obj.X, obj.Z)) - 2f;
           obj.SetPrev();
+          Model3d.Component comp = new(models[Rand.Next(0, 5)], 0);
           obj.Add(comp);
           obj.Add(new Tree());
           obj.Add(new MeshCollision<PC>(comp.Model.Mesh));
@@ -102,7 +103,8 @@ namespace New
         Model3d[] models = new Model3d[3];
         {
           int i = 0;
-          foreach (string str in new[] { "bush1", "bush2", "bush3" })
+          foreach (string str in new[]
+                     { "bush1", "bush2", "bush3" })
           {
             Model3d model = Model3d.Read(str, new Dictionary<string, uint>());
             model.Scale(16f);
@@ -122,12 +124,13 @@ namespace New
           {
             if (Rand.Next(0, 3) != 0) continue;
             Entity obj = new();
-            Model3d.Component comp = new(models[Rand.Next(0, 3)], 0);
-            obj.Add(comp);
             obj.X = ipos + Rand.NextFloat(-24, 24);
             obj.Z = jpos + Rand.NextFloat(-24, 24);
+            if (World.HeightAt(obj.X, obj.Z) < 0) continue;
             obj.Y = World.HeightAt((obj.X, obj.Z)) - 2f;
             obj.SetPrev();
+            Model3d.Component comp = new(models[Rand.Next(0, 3)], 0);
+            obj.Add(comp);
             obj.Add(new MeshCollision<PC>(comp.Model.Mesh));
             World.Objs.Add(obj);
           }
@@ -137,9 +140,7 @@ namespace New
       void makePlayer()
       {
         Player = new Entity
-        {
-          Updates = true
-        };
+          { Updates = true };
         Player.Add(new Player());
         Player.Add(new Camera());
         Player.Yaw = Player.PrevYaw = 180;
@@ -153,10 +154,8 @@ namespace New
       makePlayer();
       World = new World();
       World.Objs.Add(Player);
-
       placeTrees();
       placeBushes();
-
       World.Update();
     }
 
@@ -167,7 +166,7 @@ namespace New
       VSync = VSyncMode.Off;
       GL.DepthFunc(DepthFunction.Lequal);
       GlStateManager.EnableBlend();
-      
+
       CursorState = CursorState.Grabbed;
     }
 
@@ -243,6 +242,7 @@ namespace New
             RenderSystem.QUADS.Put(new(new Vector3(Size.X / 2f, Size.Y / 2f, 0) + new Vector3(-3, 3, 0), 0xffffffff)).Next()
           );
         }
+
         RenderSystem.QUADS.Render();
       }
 
@@ -266,7 +266,8 @@ namespace New
       Font.Draw(RenderSystem.MESH, $"heap: {_memUsage}M", 11, 98, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"rendered {InView} entities of {World.Objs.Count} ({Tris} tris)", 11, 118, PINK0, false);
       Font.Draw(RenderSystem.MESH, $"dist: {HitResult.Distance:N2}, type: {HitResult.Type}", 11, 138, PINK0, false);
-      Font.Draw(RenderSystem.MESH, $"pool efficiency: {(float)World.Objs.Count / ComponentPool.TheoreticalCount:N6}", 11, 158, PINK0, false);
+      Font.Draw(RenderSystem.MESH, $"pool efficiency: {(float)World.Objs.Count / ComponentPool.TheoreticalCount:N6}", 11, 158, PINK0,
+        false);
 
       RenderSystem.MESH.Render();
       RenderSystem.RenderingRed = false;
@@ -302,13 +303,18 @@ namespace New
         _outline = !_outline;
       if (KeyboardState.IsKeyPressed(Keys.F11))
         WindowState = WindowState == WindowState.Fullscreen ? WindowState.Normal : WindowState.Fullscreen;
-      if (KeyboardState.IsKeyPressed(Keys.F5))
+      if (KeyboardState.IsKeyPressed(Keys.V))
         FirstPerson = !FirstPerson;
-      
+      if (KeyboardState.IsKeyPressed(Keys.I))
+      {
+        _vsync = !_vsync;
+        RenderFrequency = _vsync ? 60 : 0;
+      }
+
       Ticks++;
 
       World.Update();
-      
+
       Vector3 eye = (Player.LerpedX, Player.LerpedY + 5, Player.LerpedZ);
       Vector3 dir = Player.Get<Camera>(CompType.Camera).Front;
       HitResult = World.Raycast(eye, dir);

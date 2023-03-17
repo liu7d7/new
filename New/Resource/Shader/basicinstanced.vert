@@ -8,7 +8,13 @@ out vec4 vtColor;
 uniform mat4 _proj;
 uniform mat4 _look;
 
+#define MAX 1024
+
+layout(binding = 0, packed) uniform _instanceInfo {
+  vec4 _translation[MAX];
+};
+
 void main() {
-  gl_Position = _proj * _look * vec4(aPos, 1.0);
   vtColor = color;
+  gl_Position = _proj * _look * vec4(aPos + _translation[gl_InstanceID].xyz, 1.0);
 }

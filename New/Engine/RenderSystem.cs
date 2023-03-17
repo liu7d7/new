@@ -2,15 +2,17 @@ using New.Shared;
 using New.Shared.Components;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace New.Engine
 {
   public static class RenderSystem
   {
-    public const float THRESHOLD = 0.033f;
+    public const float THRESHOLD = 0.013f;
     private const float _depthThreshold = 0.8f;
 
     public static readonly Shader BASIC = new("basic", "basic");
+    public static readonly Shader BASIC_INSTANCED = new("basicinstanced", "basic");
     private static readonly Shader _john = new("john", "john");
     private static readonly Shader _lines = new("lines", "lines", "lines");
     private static readonly Shader _pixel = new("postprocess", "pixelate");
@@ -32,7 +34,7 @@ namespace New.Engine
     public static readonly Mesh<PWC> LINE = new(DrawMode.LINE, _lines, false);
 
     private static readonly Mesh<P> _post = new(DrawMode.TRIANGLE, null, false);
-    
+
     public static readonly Image2d RECT = Image2d.FromFile("Resource/Texture/rect.png");
 
     public static readonly Fbo FRAME0 = new(1, 1, true);
@@ -79,7 +81,7 @@ namespace New.Engine
     {
       Model.Translate(vec);
     }
-    
+
     public static void Translate(float x, float y, float z)
     {
       Model.Translate(x, y, z);
@@ -89,7 +91,7 @@ namespace New.Engine
     {
       Model.Rotate(angle, x, y, z);
     }
-    
+
     public static void Rotate(float angle, Vector3 v)
     {
       Model.Rotate(angle, v.X, v.Y, v.Z);
@@ -121,7 +123,7 @@ namespace New.Engine
       shader.SetVector3("lightPos", (_camera.X + 5, _camera.Y + 12, _camera.Z + 5));
       shader.SetMatrix4("_proj", _proj);
       shader.SetMatrix4("_look", _look);
-      shader.SetFloat("_time", Fall.Now / 1000f % (MathF.PI * 2f));
+      shader.SetFloat("_time", (float)GLFW.GetTime() % (MathF.PI * 2f));
       shader.SetVector2("_radius", (2, 2));
     }
 
@@ -166,9 +168,7 @@ namespace New.Engine
       _outline.SetInt("_tex0", 0);
       FRAME1.BindDepth(TextureUnit.Texture1);
       _outline.SetInt("_tex1", 1);
-      _outline.SetInt("_abs", 1);
       _outline.SetInt("_glow", 0);
-      _outline.SetInt("_blackAndWhite", 1);
       _outline.SetFloat("_width", 1f);
       _outline.SetFloat("_threshold", THRESHOLD);
       _outline.SetFloat("_depthThreshold", _depthThreshold);

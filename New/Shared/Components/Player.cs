@@ -32,7 +32,8 @@ namespace New.Shared.Components
     static Player()
     {
       _head = Model3d.Read("icosphere", new Dictionary<string, uint>());
-      _hands = Model3d.Read("icosphere", new Dictionary<string, uint> { { "fortnite", Colors.NextColor().ToUint() } });
+      _hands = Model3d.Read("icosphere", new Dictionary<string, uint>
+        { { "fortnite", Colors.NextColor().ToUint() } });
       _capeShader = new Shader("cape", "basic");
     }
 
@@ -42,13 +43,14 @@ namespace New.Shared.Components
       _cape = new Mesh<P>(DrawMode.TRIANGLE, _capeShader, true);
       _cape.Begin();
       const int SEGMENTS = 16;
-      for (float y = 6f; y > 1.66f; y -= 0.33f)
+      const float SEG_HEIGHT = 0.33f;
+      for (float y = 6f; y > 1.66f; y -= SEG_HEIGHT)
       for (int x = -SEGMENTS; x < SEGMENTS; x++)
         _cape.Quad(
           _cape.Put(new(x, y)).Next(),
           _cape.Put(new(x + 1, y)).Next(),
-          _cape.Put(new(x + 1, y - 0.5f)).Next(),
-          _cape.Put(new(x, y - 0.5f)).Next()
+          _cape.Put(new(x + 1, y - SEG_HEIGHT)).Next(),
+          _cape.Put(new(x, y - SEG_HEIGHT)).Next()
         );
 
       _cape.End();
@@ -58,12 +60,14 @@ namespace New.Shared.Components
     {
       base.Update();
 
-      if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Left) && Fall.Now - _rightp > _punchAnimLength && Fall.Now - _leftp > _punchAnimLength)
+      if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Left) && Fall.Now - _rightp > _punchAnimLength &&
+          Fall.Now - _leftp > _punchAnimLength)
       {
         _leftp = Fall.Now;
         Fall.HitResult.Entity?.TakeDamage(1);
       }
-      else if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Right) && Fall.Now - _rightp > _punchAnimLength && Fall.Now - _leftp > _punchAnimLength)
+      else if (Fall.Instance.MouseState.IsButtonDown(MouseButton.Right) && Fall.Now - _rightp > _punchAnimLength &&
+               Fall.Now - _leftp > _punchAnimLength)
       {
         _rightp = Fall.Now;
         Fall.HitResult.Entity?.TakeDamage(1);
@@ -83,7 +87,7 @@ namespace New.Shared.Components
         RenderThirdPerson();
       }
     }
-    
+
     private static readonly Vector3 _headOffset = (0f, 4.5f, 0f);
 
     private void RenderFirstPerson()
@@ -124,9 +128,12 @@ namespace New.Shared.Components
       RenderSystem.Culling = cull;
     }
 
-    private void RenderHand(float lyaw, float progress, int side, Vector3 renderPos, Vector3 handBaseOffset, Vector3 handFullOffset, float scale, float handBaseOff, bool fp = false)
+    private void RenderHand(float lyaw, float progress, int side, Vector3 renderPos, Vector3 handBaseOffset, Vector3 handFullOffset,
+      float scale, float handBaseOff, bool fp = false)
     {
-      float prog = Fall.Now - progress is > 0 and < _punchAnimLength ? HandAnimation((float)GLFW.GetTime() * 1000f - progress, _punchAnimLength) : 0;
+      float prog = Fall.Now - progress is > 0 and < _punchAnimLength
+        ? HandAnimation((float)GLFW.GetTime() * 1000f - progress, _punchAnimLength)
+        : 0;
       Vector3 rotation = (MathF.Cos((lyaw + 180 - handBaseOff * side).Rad()), 1f, MathF.Sin((lyaw + 180 - handBaseOff * side).Rad()));
       Vector3 handRotation = (MathF.Cos((lyaw + 180 + 20 * prog * side).Rad()), 1f, MathF.Sin((lyaw + 180 + 20 * prog * side).Rad()));
       Vector3 handRenderPos = renderPos + handBaseOffset * rotation + handFullOffset * prog * handRotation;

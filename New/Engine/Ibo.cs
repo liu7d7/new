@@ -32,7 +32,7 @@ namespace New.Engine
       if (_count + 1 > _indices.Length)
       {
         int[] prev = _indices;
-        _indices = new int[(int)(_indices.Length * 1.33)];
+        _indices = new int[_indices.Length * 2];
         Array.Copy(prev, _indices, _count);
       }
 

@@ -194,18 +194,18 @@ namespace New.Engine
       {
         throw new Exception("No vertices");
       }
-      
+
       int closest = 0;
       float dist = (pos - Vbo.Vertices[0].Pos).LengthSquared;
       for (int i = 1; i < Vbo.Vertices.Length; i++)
       {
         float d = (pos - Vbo.Vertices[i].Pos).LengthSquared;
         if (d > dist) continue;
-        
+
         dist = d;
         closest = i;
       }
-      
+
       return (closest, Vbo.Vertices[closest].Pos);
     }
 
@@ -215,7 +215,7 @@ namespace New.Engine
       {
         throw new Exception("No vertices");
       }
-      
+
       Vbo.Vertices[index].Pos = pos;
       Dirty = true;
     }

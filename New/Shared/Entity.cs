@@ -1,13 +1,11 @@
-using System.Buffers;
 using New.Engine;
-using New.Shared.Components;
 using OpenTK.Mathematics;
 
 namespace New.Shared
 {
   public static class ComponentPool
   {
-    private static readonly Vec<Component> _components = new(16384);
+    private static readonly Vec<Component> _components = new(524288);
     private static readonly Queue<int> _holes = new();
     public static int Count { get; private set; }
     public static int TheoreticalCount => _components.Capacity / _size;
@@ -24,30 +22,38 @@ namespace New.Shared
       }
 
       Count++;
-      _components.EnsureCapacity(Count * _size, 1.33);
+      _components.Count = (Count - 1) * _size;
+      if (!_components.EnsureCapacity(Count * _size)) return Count - 1;
+
+      foreach (Entity obj in Fall.World.Objs)
+      {
+        obj.Relocate();
+      }
+
+      Console.WriteLine($"relocation needed @ {_components.Capacity}");
       return Count - 1;
     }
-    
+
     public static void Return(int index)
     {
       _holes.Enqueue(index);
     }
-    
+
     public static Memory<Component> Get(int index)
     {
       return _components.Items.AsMemory(index * _size, _size);
     }
   }
-  
+
   public class Entity
   {
     public readonly int Index;
-    public readonly Memory<Component> Components;
-    public readonly Guid Id = Guid.NewGuid();
+    private Memory<Component> _components;
+    public readonly long Id = Rand.NextLong();
     public bool Removed;
     public bool Updates;
     public int Life = 5;
-    
+
     public float Pitch;
     public float PrevPitch;
     public float PrevX;
@@ -58,12 +64,12 @@ namespace New.Shared
     public float Y;
     public float Yaw;
     public float Z;
-    
-    public float LerpedX => Math.Lerp(PrevX, X, Fall.TickDelta);
-    public float LerpedY => Math.Lerp(PrevY, Y, Fall.TickDelta);
-    public float LerpedZ => Math.Lerp(PrevZ, Z, Fall.TickDelta);
-    public float LerpedYaw => Math.Lerp(PrevYaw, Yaw, Fall.TickDelta);
-    public float LerpedPitch => Math.Lerp(PrevPitch, Pitch, Fall.TickDelta);
+
+    public float LerpedX => Maths.Lerp(PrevX, X, Fall.TickDelta);
+    public float LerpedY => Maths.Lerp(PrevY, Y, Fall.TickDelta);
+    public float LerpedZ => Maths.Lerp(PrevZ, Z, Fall.TickDelta);
+    public float LerpedYaw => Maths.Lerp(PrevYaw, Yaw, Fall.TickDelta);
+    public float LerpedPitch => Maths.Lerp(PrevPitch, Pitch, Fall.TickDelta);
 
     public Vector3 Pos => ToVec3();
     public Vector3 LerpedPos => ToLerpedVec3();
@@ -72,42 +78,47 @@ namespace New.Shared
     {
       X = PrevX = Y = PrevY = Z = PrevZ = Yaw = PrevYaw = Pitch = PrevPitch = 0;
       Index = ComponentPool.Rent();
-      Components = ComponentPool.Get(Index);
+      _components = ComponentPool.Get(Index);
+    }
+
+    public void Relocate()
+    {
+      _components = ComponentPool.Get(Index);
     }
 
     public void Update()
     {
-      Span<Component> c = Components.Span;
-      for (int i = 0; i < Components.Length; i++) c[i]?.Update();
+      Span<Component> c = _components.Span;
+      for (int i = 0; i < _components.Length; i++) c[i]?.Update();
     }
 
     public void Render()
     {
-      Span<Component> c = Components.Span;
-      for (int i = 0; i < Components.Length; i++) c[i]?.Render();
+      Span<Component> c = _components.Span;
+      for (int i = 0; i < _components.Length; i++) c[i]?.Render();
     }
 
     public void Collide(Entity other)
     {
-      Span<Component> c = Components.Span;
-      for (int i = 0; i < Components.Length; i++) c[i]?.Collide(other);
+      Span<Component> c = _components.Span;
+      for (int i = 0; i < _components.Length; i++) c[i]?.Collide(other);
     }
 
     public void Add(Component component)
     {
       component.Me = this;
-      Components.Span[(int)component.Type] = component;
+      _components.Span[(int)component.Type] = component;
     }
 
     public T Get<T>(CompType t) where T : Component
     {
-      return (T)Components.Span[(int)t];
+      return (T)_components.Span[(int)t];
     }
-    
+
     public IPosProvider GetMesh()
     {
-      Span<Component> c = Components.Span;
-      for (int i = 0; i < Components.Length; i++)
+      Span<Component> c = _components.Span;
+      for (int i = 0; i < _components.Length; i++)
       {
         if (c[i] is IMeshSupplier meshSupplier)
           return meshSupplier.Mesh;
@@ -118,7 +129,7 @@ namespace New.Shared
 
     public bool Has(CompType t)
     {
-      return Components.Span[(int)t] != null;
+      return _components.Span[(int)t] != null;
     }
 
     public static bool operator ==(Entity one, Entity two)
@@ -138,9 +149,9 @@ namespace New.Shared
 
     public override int GetHashCode()
     {
-      return Id.GetHashCode();
+      return unchecked((int)Id) ^ (int)(Id >> 32);
     }
-    
+
     public Vector3 ToVec3()
     {
       return (X, Y, Z);
@@ -171,13 +182,13 @@ namespace New.Shared
       PrevYaw = Yaw;
       PrevPitch = Pitch;
     }
-    
+
     public void TakeDamage(int damage)
     {
       Life -= damage;
       if (Life <= 0) Removed = true;
     }
-    
+
     public Vector2i ChunkPos => new((int)X >> 4, (int)Z >> 4);
   }
 
@@ -192,16 +203,13 @@ namespace New.Shared
     }
 
     public virtual void Update()
-    {
-    }
+    { }
 
     public virtual void Render()
-    {
-    }
+    { }
 
     public virtual void Collide(Entity other)
-    {
-    }
+    { }
 
     public override int GetHashCode()
     {

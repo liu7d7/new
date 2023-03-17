@@ -28,7 +28,6 @@ namespace New.Shared.Components
       Vec<Vector3> vertices = new();
       Vector3 max = new(float.MinValue, float.MinValue, float.MinValue);
       Vector3 min = new(float.MaxValue, float.MaxValue, float.MaxValue);
-      bool first = true;
       foreach (string line in File.ReadAllLines($"Resource/Model/{path}.obj"))
       {
         if (line.StartsWith("#")) continue;
@@ -118,10 +117,10 @@ namespace New.Shared.Components
     {
       _models.Add(Matrix4.CreateTranslation(pos) * RenderSystem.Model);
     }
-    
+
     public void Render(float x, float y, float z)
     {
-      _models.Add(Matrix4.CreateTranslation(x, y, z) * RenderSystem.Model); 
+      _models.Add(Matrix4.CreateTranslation(x, y, z) * RenderSystem.Model);
     }
 
     public static void Draw()
@@ -134,7 +133,7 @@ namespace New.Shared.Components
 
         Matrix4[] models = model._models.Items;
 
-        int count = System.Math.Min(1024, model._models.Count);
+        int count = Math.Min(1024, model._models.Count);
 
         _shader.Bind();
         _ubo.PutAll(ref models, count, 0);

@@ -9,8 +9,6 @@ uniform float _width;
 uniform float _threshold;
 uniform float _depthThreshold;
 uniform vec4 _outlineColor;
-uniform int _blackAndWhite;
-uniform int _abs;
 uniform int _glow;
 uniform vec4 _otherColor;
 uniform vec2 _screenSize;
@@ -45,15 +43,7 @@ bool shouldOutline(vec2 pos, vec4 center, float depth) {
   for (int i = 0; i < 8; i++) {
     vec2 corner = (corners[i] + pos) * oneTexel;
     vec4 col = texture(_tex0, corner);
-    if (_abs == 0) {
-      diff = -(center.r - col.r)
-      -(center.g - col.g)
-      -(center.b - col.b);
-    } else {
-      diff = abs(center.r - col.r)
-      + abs(center.g - col.g)
-      + abs(center.b - col.b);
-    }
+    diff = abs(center.r - col.r) + abs(center.g - col.g) + abs(center.b - col.b);
     
     if (diff > _threshold || abs(depth - depthAt(corner)) > _depthThreshold) {
       return true;
@@ -65,17 +55,9 @@ bool shouldOutline(vec2 pos, vec4 center, float depth) {
 void main() {
   vec4 center = texture(_tex0, v_TexCoords);
   bool o = shouldOutline(v_Pos, center, depthAt(v_TexCoords));
-  if (_blackAndWhite == 1) {
-    if (o) {
-      fragColor = _outlineColor;
-    } else {
-      fragColor = _otherColor;
-    }
+  if (o) {
+    fragColor = _outlineColor;
   } else {
-    if (o) {
-      fragColor = _outlineColor;
-    } else {
-      fragColor = center;
-    }
+    fragColor = _otherColor;
   }
 }

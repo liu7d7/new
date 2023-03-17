@@ -60,7 +60,7 @@ namespace New.Shared
         EnsureCapacity(Count + 1);
       return Items[Count++] = item;
     }
-    
+
     public void Add(T item)
     {
       if (Count == Items.Length)
@@ -99,6 +99,11 @@ namespace New.Shared
     public void CopyTo(T[] array, int arrayIndex)
     {
       Array.Copy(Items, 0, array, arrayIndex, Count);
+    }
+
+    public T Pop()
+    {
+      return Items[--Count];
     }
 
     public int IndexOf(T item)
@@ -173,6 +178,7 @@ namespace New.Shared
       {
         Array.Clear(Items, 0, Count);
       }
+
       Count = 0;
     }
 
@@ -297,8 +303,7 @@ namespace New.Shared
       }
 
       public void Dispose()
-      {
-      }
+      { }
 
       public bool MoveNext()
       {

@@ -1,18 +1,13 @@
-using System.Buffers;
-using New.Engine;
 using New.Shared.Components;
 using OpenTK.Mathematics;
 
-namespace New.Shared
+namespace New.Shared.Worlds.World
 {
   public class World
   {
     private static readonly Func<Entity, bool> _removed = obj => obj.Removed;
 
-    private static readonly Action<Entity> _ifRemoved = obj =>
-    {
-      ComponentPool.Return(obj.Index);
-    };
+    private static readonly Action<Entity> _ifRemoved = obj => { ComponentPool.Return(obj.Index); };
 
     private readonly Dictionary<Vector2i, Chunk> _chunks;
     public readonly Vec<Entity> Objs = new(16384);
@@ -31,6 +26,7 @@ namespace New.Shared
       Span<Entity> objs = Objs.Items;
       for (int i = 0; i < Objs.Count; i++)
       {
+        if (objs[i] == null) continue;
         float dx = objs[i].X - Fall.Player.X, dz = objs[i].Z - Fall.Player.Z;
         float d = dx * dx + dz * dz;
         if (!objs[i].Updates || d > 18432)
@@ -38,7 +34,7 @@ namespace New.Shared
         objs[i].Update();
         k++;
       }
-            
+
       Objs.AddRange(ObjsToAdd);
       ObjsToAdd.Clear();
       Fall.InView = k;
@@ -71,17 +67,20 @@ namespace New.Shared
         int d = i * i + j * j;
         if (d > 81)
           continue;
-        if (MathF.Abs(Math.WrapDegrees(Math.CalcAngle(j, i) - lyaw)) > 75 && d > 9)
+        if (MathF.Abs(Maths.WrapDegrees(Maths.CalcAngle(j, i) - lyaw)) > 75 && d > 9)
           continue;
-        _chunks[(chunkPos.X + i, chunkPos.Y + j)].Mesh.Render();
+        _chunks[(chunkPos.X + i, chunkPos.Y + j)].Draw();
       }
+
+      Chunk.AfterDraw();
 
       Span<Entity> objs = Objs.Items;
       for (int i = 0; i < Objs.Count; i++)
       {
+        if (objs[i] == null) continue;
         float dx = objs[i].X - Fall.Player.X, dz = objs[i].Z - Fall.Player.Z;
         float d = dx * dx + dz * dz;
-        if (d > 18432 || (MathF.Abs(Math.WrapDegrees(Math.CalcAngleXz(Fall.Player, objs[i]) - lyaw)) > 65 && d > 864))
+        if (d > 18432 || (MathF.Abs(Maths.WrapDegrees(Maths.CalcAngleXz(Fall.Player, objs[i]) - lyaw)) > 65 && d > 864))
           continue;
 
         objs[i].Render();
@@ -93,7 +92,13 @@ namespace New.Shared
       return Chunk.HeightAt(vec);
     }
 
+    public static float HeightAt(float x, float z)
+    {
+      return Chunk.HeightAt((x, z));
+    }
+
     public const float REACH = 24f;
+    public const float REACH_SQ = REACH * REACH;
 
     public HitResult Raycast(Vector3 eye, Vector3 dir)
     {
@@ -104,7 +109,10 @@ namespace New.Shared
       HitResultType type = HitResultType.None;
       for (int i = 0; i < Objs.Count; i++)
       {
-        if ((eye - objs[i].Pos).LengthSquared > 676) continue;
+        if (objs[i] == null) continue;
+        float dx = objs[i].X - eye.X, dz = objs[i].Z - eye.Z;
+        float di = dx * dx + dz * dz;
+        if (di > REACH_SQ) continue;
         if (!objs[i].Has(CompType.Collision)) continue;
 
         if (!objs[i].Get<Collision>(CompType.Collision).RayCollides(objs[i].Pos, eye, dir, out float d))
@@ -126,9 +134,9 @@ namespace New.Shared
         if (!_chunks.TryGetValue((i + chunkPos.X, j + chunkPos.Y), out Chunk c)) continue;
         if (!c.Collision.RayCollides(Vector3.Zero, eye, dir, out float d))
           continue;
-        
+
         if (d > dist || d is > REACH or < 0) continue;
-        
+
         dist = d;
         b = eye + dir * d;
         chunk = c;
@@ -144,72 +152,6 @@ namespace New.Shared
         default:
           return new HitResult();
       }
-    }
-  }
-
-  public class Chunk
-  {
-    public readonly Mesh<P> Mesh;
-    public readonly MeshCollision<P> Collision;
-    private const int _quality = 4, _quality1 = _quality + 1, _tileSize = 16 / _quality;
-    public const int SHIFT = 4;
-    public static readonly int SIZE = (int)MathF.Pow(2, SHIFT);
-    private const float _div = 24f;
-
-    public Chunk(Vector2i chunkPos)
-    {
-      Mesh = new Mesh<P>(DrawMode.TRIANGLE, RenderSystem.BASIC, true, _quality * _quality);
-      Collision = new MeshCollision<P>(Mesh);
-
-      Span<int> memo = stackalloc int[_quality1 * _quality1];
-      memo.Fill(-1);
-
-      Mesh.Begin();
-      for (int i = 0; i < _quality; i++)
-      for (int j = 0; j < _quality; j++)
-      {
-        int i1, i2, i3, i4;
-        int ti = i * _tileSize + chunkPos.X * SIZE, tj = j * _tileSize + chunkPos.Y * SIZE;
-        if ((i1 = memo[i * _quality1 + j]) == -1)
-          i1 = memo[i * _quality1 + j] =
-            Mesh.Put(new(ti, Noise(ti, tj), tj)).Next();
-
-        if ((i2 = memo[(i + 1) * _quality1 + j]) == -1)
-          i2 = memo[(i + 1) * _quality1 + j] =
-            Mesh.Put(new(ti + _tileSize, Noise(ti + _tileSize, tj), tj)).Next();
-
-        if ((i3 = memo[(i + 1) * _quality1 + j + 1]) == -1)
-          i3 = memo[(i + 1) * _quality1 + j + 1] =
-            Mesh.Put(new(ti + _tileSize, Noise(ti + _tileSize, tj + _tileSize), tj + _tileSize)).Next();
-
-        if ((i4 = memo[i * _quality1 + j + 1]) == -1)
-          i4 = memo[i * _quality1 + j + 1] =
-            Mesh.Put(new(ti, Noise(ti, tj + _tileSize), tj + _tileSize)).Next();
-        Mesh.Quad(i4, i3, i2, i1);
-      }
-
-      Mesh.End();
-    }
-
-    private static float Noise(int x, int y)
-    {
-      return SimplexNoise.Noise.CalcPixel2D(x, y, 0.01f) / _div;
-    }
-
-    public static float HeightAt(Vector2 vec)
-    {
-      int x1 = (int)MathF.Floor(vec.X);
-      int y1 = (int)MathF.Floor(vec.Y);
-
-      float v00 = Noise(x1, y1);
-      float v10 = Noise(x1 + 1, y1);
-      float v01 = Noise(x1, y1 + 1);
-      float v11 = Noise(x1 + 1, y1 + 1);
-      float x = vec.X - x1;
-      float y = vec.Y - y1;
-
-      // bilinear interpolation
-      return (1 - x) * (1 - y) * v00 + x * (1 - y) * v10 + (1 - x) * y * v01 + x * y * v11;
     }
   }
 }

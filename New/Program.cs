@@ -7,7 +7,6 @@ namespace New
 {
   public static class Program
   {
-    // ReSharper disable once InconsistentNaming
     [STAThread]
     public static void Main(string[] args)
     {

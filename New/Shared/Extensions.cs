@@ -6,14 +6,6 @@ using OpenTK.Mathematics;
 
 namespace New.Shared
 {
-  public static class Maps
-  {
-    public static Dictionary<Tk, Tv> Create<Tk, Tv>(params KeyValuePair<Tk, Tv>[] pairs)
-    {
-      return pairs.ToDictionary(pair => pair.Key, pair => pair.Value);
-    }
-  }
-
   public static class DeterministicRandom
   {
     private static readonly float[] _rand = new float[1000];
@@ -60,7 +52,7 @@ namespace New.Shared
 
     public static Color4 GetRandomColor(object val = null)
     {
-      val ??= Rand.NextInt64();
+      val ??= Rand.NextLong();
       if (!_initialized) GetColor("white");
       return _colors[DeterministicRandom.NextInt(val, _colors.Count)];
     }
@@ -70,12 +62,12 @@ namespace New.Shared
       _red += RenderSystem.THRESHOLD * 2;
       _blue += RenderSystem.THRESHOLD * 2;
       _green += RenderSystem.THRESHOLD * 2;
-      _red %= 2f;
-      _blue %= 2f;
-      _green %= 2f;
+      _red %= 1f;
+      _blue %= 1f;
+      _green %= 1f;
       return new Color4(_red, _green, _blue, 1f);
     }
-    
+
     public static uint ToUint(this Color4 color)
     {
       return (uint)(color.A * 255) << 24 | (uint)(color.R * 255) << 16 | (uint)(color.G * 255) << 8 |
@@ -110,7 +102,7 @@ namespace New.Shared
       return Random.Shared.Next();
     }
 
-    public static long NextInt64()
+    public static long NextLong()
     {
       return Random.Shared.NextInt64();
     }
@@ -150,33 +142,33 @@ namespace New.Shared
       return o.ToString();
     }
 
-    public static Task ForEachAsync<T>(Vec<T> vec, int batches, Func<T, Task> action)
+    public static Task ForEachAsync<T>(Vec<T> vec, int batches, Action<T> action)
     {
       async Task partition(IEnumerator<T> part)
       {
         using (part)
         {
-          while (part.MoveNext()) await action(part.Current);
+          while (part.MoveNext()) await Task.Run(() => action(part.Current));
         }
       }
 
       return Task.WhenAll(Partitioner.Create(vec).GetPartitions(batches).AsParallel().Select(partition));
     }
 
-    public static Task ForAsync(Range list, int batches, Func<int, Task> action)
+    public static Task ForAsync(Range list, int batches, Action<int> action)
     {
       async Task partition(IEnumerator<int> part)
       {
         using (part)
         {
-          while (part.MoveNext()) await action(part.Current);
+          while (part.MoveNext()) await Task.Run(() => action(part.Current));
         }
       }
 
       return Task.WhenAll(Partitioner.Create(Enumerable.Range(list.Start.Value, list.End.Value)).GetPartitions(batches)
         .AsParallel().Select(partition));
     }
-    
+
     private const float _toRad = 1f / 180f * MathF.PI;
     private const float _toDeg = 1f / MathF.PI * 180f;
 
@@ -199,7 +191,7 @@ namespace New.Shared
     {
       matrix4 *= Matrix4.CreateTranslation(translation);
     }
-    
+
     public static void Translate(this ref Matrix4 matrix4, float x, float y, float z)
     {
       matrix4 *= Matrix4.CreateTranslation(x, y, z);
@@ -214,7 +206,7 @@ namespace New.Shared
     {
       return ((int)vec.X >> 4, (int)vec.Y >> 4);
     }
-    
+
     public static Vector2i ToChunkPos(this Vector3 vec)
     {
       return ((int)vec.X >> 4, (int)vec.Z >> 4);

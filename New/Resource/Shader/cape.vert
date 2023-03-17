@@ -31,10 +31,10 @@ void main() {
   float h = 5.33;
   final.xz *= abs(curve((tier.y - h) / h) * 10.) * mul + 0.45;
 
-  float muly = f(x) * 0.375 + 1.;
-  final.y += abs(curve((tier.y - h) / h) * 3.) * muly;
+  mul = f(x) * 0.375 + 1.;
+  final.y += abs(curve((tier.y - h) / h) * 3.) * mul;
 
   final += _translation;
   gl_Position = _proj * _look * vec4(final, 1.);
-  vtColor = vec4(_color.rgb + tier.x * (h - tier.y) / h * 0.03, 1.);
+  vtColor = vec4(_color.rgb + tier.x * (h - tier.y) / h * 0.01, 1.);
 }

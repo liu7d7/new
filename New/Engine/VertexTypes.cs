@@ -7,7 +7,7 @@ namespace New.Engine
   public struct P : IPos3d
   {
     public Vector3 Pos { get; set; }
-    
+
     public P(float x, float y, float z)
     {
       Pos = new Vector3(x, y, z);
@@ -308,13 +308,34 @@ namespace New.Engine
   {
     public static Dictionary<Type, Vao.Attrib[]> Layouts = new Dictionary<Type, Vao.Attrib[]>
     {
-      { typeof(P), new[] { Vao.Attrib.Float3 } },
-      { typeof(PC), new[] { Vao.Attrib.Float3, Vao.Attrib.Float4 } },
-      { typeof(PCN), new[] { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float3 } },
-      { typeof(PCNTT), new[] { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float3, Vao.Attrib.Float2, Vao.Attrib.Float1 } },
-      { typeof(PCT), new[] { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float2 } },
-      { typeof(PCTT), new[] { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float2, Vao.Attrib.Float1 } },
-      { typeof(PWC), new[] { Vao.Attrib.Float3, Vao.Attrib.Float1, Vao.Attrib.Float4 } },
+      {
+        typeof(P), new[]
+          { Vao.Attrib.Float3 }
+      },
+      {
+        typeof(PC), new[]
+          { Vao.Attrib.Float3, Vao.Attrib.Float4 }
+      },
+      {
+        typeof(PCN), new[]
+          { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float3 }
+      },
+      {
+        typeof(PCNTT), new[]
+          { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float3, Vao.Attrib.Float2, Vao.Attrib.Float1 }
+      },
+      {
+        typeof(PCT), new[]
+          { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float2 }
+      },
+      {
+        typeof(PCTT), new[]
+          { Vao.Attrib.Float3, Vao.Attrib.Float4, Vao.Attrib.Float2, Vao.Attrib.Float1 }
+      },
+      {
+        typeof(PWC), new[]
+          { Vao.Attrib.Float3, Vao.Attrib.Float1, Vao.Attrib.Float4 }
+      },
     };
   }
 }
