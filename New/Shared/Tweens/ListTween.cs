@@ -1,48 +1,47 @@
-namespace New.Shared.Tweens
+namespace New.Shared.Tweens;
+
+public sealed class ListTween : BaseTween
 {
-  public class ListTween : BaseTween
+  private readonly BaseTween[] _list;
+  private int _idx;
+  private float _lastOut;
+
+  public ListTween(params BaseTween[] list)
   {
-    private readonly BaseTween[] _list;
-    private int _idx;
-    private float _lastOut;
+    if (list.Any(it => it.Infinite))
+      throw new Exception("Tried to create ListTween with infinite duration tween");
+    _list = list;
+    _idx = 0;
+    Duration = list.Sum(it => it.Duration);
+  }
 
-    public ListTween(params BaseTween[] list)
+  public override float Output()
+  {
+    if (!_list[_idx].Done()) return _lastOut = _list[_idx].Output();
+    if (_idx == _list.Length - 1) return _lastOut;
+    _idx++;
+    _list[_idx].LastActivation = Fall.Now;
+    return _lastOut = _list[_idx].Output();
+  }
+
+  public override float output_at(float time)
+  {
+    float duration = 0f;
+    float lastDuration = 0f;
+    int i;
+    for (i = 0; i < _list.Length; i++)
     {
-      if (list.Any(it => it.Infinite))
-        throw new Exception("Tried to create ListTween with infinite duration tween");
-      _list = list;
-      _idx = 0;
-      Duration = list.Sum(it => it.Duration);
+      lastDuration = duration;
+      duration += _list[i].Duration;
+      if (duration > time) break;
     }
 
-    public override float Output()
-    {
-      if (!_list[_idx].Done()) return _lastOut = _list[_idx].Output();
-      if (_idx == _list.Length - 1) return _lastOut;
-      _idx++;
-      _list[_idx].LastActivation = Fall.Now;
-      return _lastOut = _list[_idx].Output();
-    }
+    i--;
+    return _list[i].output_at(time - lastDuration - LastActivation);
+  }
 
-    public override float OutputAt(float time)
-    {
-      float duration = 0f;
-      float lastDuration = 0f;
-      int i;
-      for (i = 0; i < _list.Length; i++)
-      {
-        lastDuration = duration;
-        duration += _list[i].Duration;
-        if (duration > time) break;
-      }
-
-      i--;
-      return _list[i].OutputAt(time - lastDuration - LastActivation);
-    }
-
-    public override bool Done()
-    {
-      return _idx == _list.Length - 1 && _list[_idx].Done();
-    }
+  public override bool Done()
+  {
+    return _idx == _list.Length - 1 && _list[_idx].Done();
   }
 }

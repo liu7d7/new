@@ -8,7 +8,7 @@ uniform mat4 _proj;
 uniform mat4 _look;
 uniform vec4 _color;
 uniform vec3 _translation;
-uniform float _time;
+uniform float _mtime;
 uniform float _yaw;
 
 const float segments = 16.;
@@ -25,7 +25,7 @@ float f(float x) {
 
 void main() {
   vec3 final = vec3(cos(radians(tier.x * inc + _yaw)) * rad, tier.y, sin(radians(tier.x * inc + _yaw)) * rad);
-  float x = (tier.x * 0.25 + _time * (sin(_time) * 0.5 + 4.));
+  float x = (tier.x * 0.25 + _mtime * (sin(_mtime) * 0.5 + 4.));
 
   float mul = f(x) * 0.25 + 1.25;
   float h = 5.33;

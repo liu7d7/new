@@ -1,7 +1,6 @@
-﻿namespace New.Engine
+﻿namespace New.Engine;
+
+public interface IMeshSupplier
 {
-  public interface IMeshSupplier
-  {
-    public IPosProvider Mesh { get; }
-  }
+  public IPosProvider Mesh { get; }
 }

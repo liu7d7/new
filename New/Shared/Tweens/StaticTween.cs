@@ -1,28 +1,27 @@
-namespace New.Shared.Tweens
+namespace New.Shared.Tweens;
+
+public sealed class StaticTween : BaseTween
 {
-  public class StaticTween : BaseTween
+  private readonly float _output;
+
+  public StaticTween(float output, float duration)
   {
-    private readonly float _output;
+    _output = output;
+    Duration = duration;
+  }
 
-    public StaticTween(float output, float duration)
-    {
-      _output = output;
-      Duration = duration;
-    }
+  public override float Output()
+  {
+    return _output;
+  }
 
-    public override float Output()
-    {
-      return _output;
-    }
+  public override float output_at(float time)
+  {
+    return _output;
+  }
 
-    public override float OutputAt(float time)
-    {
-      return _output;
-    }
-
-    public override bool Done()
-    {
-      return Fall.Now - LastActivation > Duration;
-    }
+  public override bool Done()
+  {
+    return Fall.Now - LastActivation > Duration;
   }
 }

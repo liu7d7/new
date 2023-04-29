@@ -6,7 +6,6 @@ layout(location = 2) in vec2 texCoords;
 
 uniform mat4 _proj;
 uniform mat4 _look;
-uniform int _rendering3d;
 
 out vec4 v_Color;
 out vec2 v_TexCoords;

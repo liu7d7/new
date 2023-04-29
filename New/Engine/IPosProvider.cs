@@ -1,11 +1,10 @@
 ﻿using OpenTK.Mathematics;
 
-namespace New.Engine
+namespace New.Engine;
+
+public interface IPosProvider
 {
-  public interface IPosProvider
-  {
-    public (int, Vector3) ClosestVertex(Vector3 pos);
-    public void SetPos(int index, Vector3 pos);
-    public void End();
-  }
+  public (int, Vector3) closest_vertex(Vector3 pos);
+  public void set_pos(int index, Vector3 pos);
+  public void End();
 }
